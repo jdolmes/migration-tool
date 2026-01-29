@@ -104,13 +104,20 @@ export default function OccupationDetailPage() {
         for (const occ of occupations) {
           const { data, error } = await supabase
             .from('visa_eligibility')
-            .select('visa_id, anzsco_code, catalogue_version, is_eligible, eligibility_reason, applicable_lists, visa:visas(subclass, visa_name, stream, category, catalogue_version, legislative_instrument)')
+            .select('visa_id, anzsco_code, catalogue_version, is_eligible, eligibility_reason, applicable_lists, visa:visas!inner(subclass, visa_name, stream, category, catalogue_version, legislative_instrument)')
             .eq('anzsco_code', code)
             .eq('catalogue_version', occ.catalogue_version)
             .eq('is_eligible', true)
 
           if (error) throw error
-          if (data) allVisas.push(...data)
+          if (data) {
+            // Transform the data to match our interface
+            const transformedData = data.map((item: any) => ({
+              ...item,
+              visa: Array.isArray(item.visa) ? item.visa[0] : item.visa
+            }))
+            allVisas.push(...transformedData)
+          }
         }
 
         const visaOrder: { [key: string]: number } = {
