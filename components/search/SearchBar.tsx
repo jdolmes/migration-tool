@@ -11,16 +11,17 @@ interface SearchBarProps {
 export default function SearchBar({ value, onChange, placeholder }: SearchBarProps) {
   return (
     <div className="relative w-full max-w-2xl">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
         <Search className="h-5 w-5 text-gray-400" />
       </div>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg 
-                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                   text-lg"
+        className="block w-full pl-14 pr-5 py-4 bg-white border-0 rounded-full
+                   shadow-lg shadow-blue-900/20
+                   focus:ring-4 focus:ring-white/30 focus:outline-none
+                   text-lg text-gray-900 placeholder-gray-400"
         placeholder={placeholder || "Search by occupation code or name..."}
       />
     </div>
