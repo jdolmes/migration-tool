@@ -63,9 +63,15 @@ export default function OccupationCard({
             </span>
           </div>
         </div>
-        <div className="text-blue-600 font-medium pl-4 group-hover:translate-x-1 transition-transform">
-          <span className="hidden sm:inline">View Details </span>
-          <span className="text-xl">→</span>
+        <div className="pl-4">
+          <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600
+                         rounded-full text-sm font-medium group-hover:bg-blue-600 group-hover:text-white
+                         transition-colors">
+            <span className="hidden sm:inline">View Details</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
         </div>
       </div>
     </div>

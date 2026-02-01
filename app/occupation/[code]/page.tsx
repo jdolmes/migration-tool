@@ -298,7 +298,12 @@ export default function OccupationDetailPage() {
 
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <button onClick={() => router.push('/')} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
+          <button
+            onClick={() => router.push('/')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600
+                       rounded-full text-sm font-medium hover:bg-blue-600 hover:text-white
+                       transition-colors mb-4"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back to Search
           </button>
