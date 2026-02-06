@@ -12,6 +12,14 @@ interface Occupation {
   skill_level: number | null
   alternative_titles: string[] | null
   specialisations: string[] | null
+  major_group: string | null
+  major_group_title: string | null
+  sub_major_group: string | null
+  sub_major_group_title: string | null
+  minor_group: string | null
+  minor_group_title: string | null
+  unit_group: string | null
+  unit_group_title: string | null
 }
 
 interface VisaOption {
@@ -75,7 +83,7 @@ export default function OccupationDetailPage() {
         
         const { data: occData, error: occError } = await supabase
           .from('occupations')
-          .select('code, catalogue_version, principal_title, skill_level, alternative_titles, specialisations')
+          .select('code, catalogue_version, principal_title, skill_level, alternative_titles, specialisations, major_group, major_group_title, sub_major_group, sub_major_group_title, minor_group, minor_group_title, unit_group, unit_group_title')
           .eq('code', code)
           .order('catalogue_version')
 
@@ -351,34 +359,38 @@ export default function OccupationDetailPage() {
                 )
               }
 
-              // Ensure arrays are actually arrays (fix for PostgreSQL text[] type)
+              const hasHierarchy = v2022Occ.major_group && v2022Occ.unit_group
               const altTitles = Array.isArray(v2022Occ.alternative_titles) ? v2022Occ.alternative_titles : []
               const specs = Array.isArray(v2022Occ.specialisations) ? v2022Occ.specialisations : []
-              
               const hasAltTitles = altTitles.length > 0
               const hasSpecs = specs.length > 0
 
-              if (!hasAltTitles && !hasSpecs) {
-                return (
-                  <div className="text-center py-8">
-                    <p className="text-gray-600 mb-2">
-                      No additional ANZSCO details available.
-                    </p>
-                    <a 
-                      href={`https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/${v2022Occ.code.substring(0,1)}/${v2022Occ.code.substring(0,2)}/${v2022Occ.code.substring(0,4)}/${v2022Occ.code}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
-                    >
-                      View full description on ABS website
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  </div>
-                )
-              }
-
               return (
                 <>
+                  {/* ANZSCO Hierarchy - NEW */}
+                  {hasHierarchy && (
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="grid md:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="font-semibold text-gray-700">Major Group:</span>
+                          <span className="ml-2 text-gray-900">{v2022Occ.major_group} - {v2022Occ.major_group_title}</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">Sub-Major Group:</span>
+                          <span className="ml-2 text-gray-900">{v2022Occ.sub_major_group} - {v2022Occ.sub_major_group_title}</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">Minor Group:</span>
+                          <span className="ml-2 text-gray-900">{v2022Occ.minor_group} - {v2022Occ.minor_group_title}</span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">Unit Group:</span>
+                          <span className="ml-2 text-gray-900">{v2022Occ.unit_group} - {v2022Occ.unit_group_title}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Alternative Titles */}
                   {hasAltTitles && (
                     <div>
