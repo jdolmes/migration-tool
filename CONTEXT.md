@@ -6,7 +6,30 @@
 
 ---
 
-## Last Session (January 30, 2026)
+## Last Session (February 6, 2026)
+
+### What We Accomplished
+1. ✅ Imported ANZSCO alternative titles (331 occupations)
+2. ✅ Imported ANZSCO specialisations (510 occupations)
+3. ✅ Added ANZSCO Details section to occupation detail page
+4. ✅ Updated database schema with new fields (alternative_titles, specialisations)
+5. ✅ Extracted data from official ABS Excel files (ANZSCO 2022 Index)
+
+### Data Source
+- **File:** ANZSCO 2022 Index of Principal Titles, Alternative Titles and Specialisations (June 2023)
+- **Authority:** Australian Bureau of Statistics (ABS)
+- **Coverage:** 1,076 occupation codes (v2022)
+- **Imported:** 665 occupations updated (331 with alt titles, 510 with specialisations)
+
+### Current State
+- **Frontend:** Fully functional with new ANZSCO Details section
+- **Database:** 3,261 occupations, 665 with alternative titles/specialisations
+- **Deployment:** Ready to deploy (needs git push)
+- **Performance:** Fast, responsive, no known bugs
+
+---
+
+## Previous Session (January 30, 2026)
 
 ### What We Accomplished
 1. ✅ Fixed TypeScript error in visa eligibility query
@@ -41,6 +64,10 @@
 - Grouped search results (same code, multiple catalogues)
 - OSCA filtering (not shown in search)
 - Occupation detail page with visa table
+- **NEW: ANZSCO Details section** ✨
+  - Alternative titles display
+  - Specialisations display
+  - Link to ABS website for full descriptions
 - All visas displayed (v1.3 + v2022) together
 - Color-coded visa categories (green/yellow sidebars)
 - List membership indicators (✓/✗/—)
@@ -56,7 +83,7 @@
 
 ### Key Files
 - `/app/page.tsx` - Home page with search
-- `/app/occupation/[code]/page.tsx` - Detail page with visa table
+- `/app/occupation/[code]/page.tsx` - Detail page with visa table + ANZSCO details (UPDATED)
 - `/components/search/SearchBar.tsx` - Search input
 - `/components/search/OccupationCard.tsx` - Result cards
 - `/hooks/useOccupationSearch.ts` - Search logic with debouncing
@@ -67,6 +94,8 @@
 - Search debounced at 300ms
 - OSCA occupations filtered with `.neq('catalogue_version', 'OSCA')`
 - Visa ordering uses custom sort function with predefined order
+- **NEW:** Alternative titles and specialisations are PostgreSQL text[] arrays
+- **NEW:** ANZSCO details only shown for v2022 occupations
 
 ### Environment Variables
 ```
@@ -79,17 +108,18 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[stored securely]
 ## Next Priorities
 
 ### Immediate (Next Session)
-1. **Fix Supabase RLS** - Enable read-only public access
-2. **Add autocomplete dropdown** - Show suggestions as user types
+1. **Test ANZSCO Details** - Verify alternative titles and specialisations display correctly
+2. **Deploy to production** - Git push to trigger Vercel deployment
+3. **Fix Supabase RLS** - Enable read-only public access
 
 ### This Week
-3. **ANZSCO Details tab** - Show occupation description, tasks, etc.
-4. **Mobile improvements** - Better responsive design
+4. **Add autocomplete dropdown** - Show suggestions as user types
+5. **Mobile improvements** - Better responsive design for ANZSCO Details section
 
 ### This Month
-5. Complete high-priority backlog (see TODO.md)
-6. Gather user feedback
-7. Iterate based on usage
+6. Complete high-priority backlog (see TODO.md)
+7. Gather user feedback
+8. Iterate based on usage
 
 ---
 
@@ -112,6 +142,10 @@ git push
 ### Testing Checklist
 - [ ] Search works (try "software", "cook", "261313")
 - [ ] Detail page loads (click any result)
+- [ ] **NEW: ANZSCO Details section displays** ✨
+- [ ] **NEW: Alternative titles show correctly** ✨
+- [ ] **NEW: Specialisations show correctly** ✨
+- [ ] **NEW: ABS link works** ✨
 - [ ] Visa table displays correctly
 - [ ] LIN links open correct legislation
 - [ ] Info buttons show modals
@@ -129,6 +163,8 @@ git push
 
 ### Database Size
 - Occupations: 3,261 records
+- **Occupations with Alternative Titles:** 331 (NEW)
+- **Occupations with Specialisations:** 510 (NEW)
 - Visas: 13 records
 - Occupation Lists: 960 records
 - Visa Eligibility: 9,464 records
@@ -140,9 +176,11 @@ git push
 Questions to ask test users:
 1. Is the search easy to use?
 2. Is the visa table clear and understandable?
-3. What information is missing?
-4. What would you add/change?
-5. Did you find what you were looking for?
+3. **NEW: Are alternative titles helpful for finding occupations?** ✨
+4. **NEW: Are specialisations useful for understanding occupation variations?** ✨
+5. What information is missing?
+6. What would you add/change?
+7. Did you find what you were looking for?
 
 ---
 
@@ -156,6 +194,7 @@ Questions to ask test users:
 
 ### Future Refactoring
 - Extract visa table into separate component
+- **NEW: Extract ANZSCO Details into separate component** ✨
 - Create reusable modal component
 - Consolidate color/style utilities
 - Add proper TypeScript types for all Supabase queries
@@ -166,9 +205,9 @@ Questions to ask test users:
 
 ### Documentation
 - PROJECT_README.md - Project overview
-- DATABASE_SCHEMA.md - Database structure
+- DATABASE_SCHEMA.md - Database structure (UPDATED with new fields)
 - CONVENTIONS.md - Code style guide
-- TODO.md - Feature backlog
+- TODO.md - Feature backlog (UPDATED with completed items)
 - API_REFERENCE.md - Supabase query patterns
 - Anzscosearch_UI_UX_Analysis.md - Design inspiration
 
@@ -177,6 +216,7 @@ Questions to ask test users:
 - Vercel Dashboard: https://vercel.com/jdolmes-projects/migration-tool
 - Supabase Dashboard: https://supabase.com/dashboard/project/eulnvbopvqilqyvyiqux
 - GitHub Repo: https://github.com/jdolmes/migration-tool
+- ABS ANZSCO 2022: https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022
 
 ---
 
@@ -189,6 +229,8 @@ When working on this project:
 4. Use API_REFERENCE.md for Supabase examples
 5. Test locally before pushing (npm run dev)
 6. Commit with clear messages (see CONVENTIONS.md)
+7. **NEW: Alternative titles and specialisations are text[] arrays in PostgreSQL**
+8. **NEW: ANZSCO details section only shows for v2022 occupations**
 
 ---
 
@@ -212,4 +254,4 @@ When working on this project:
 
 ---
 
-Last Updated: January 30, 2026
+Last Updated: February 6, 2026

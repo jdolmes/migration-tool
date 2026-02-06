@@ -10,6 +10,8 @@ interface Occupation {
   catalogue_version: string
   principal_title: string
   skill_level: number | null
+  alternative_titles: string[] | null
+  specialisations: string[] | null
 }
 
 interface VisaOption {
@@ -73,7 +75,7 @@ export default function OccupationDetailPage() {
         
         const { data: occData, error: occError } = await supabase
           .from('occupations')
-          .select('code, catalogue_version, principal_title, skill_level')
+          .select('code, catalogue_version, principal_title, skill_level, alternative_titles, specialisations')
           .eq('code', code)
           .order('catalogue_version')
 
@@ -111,7 +113,6 @@ export default function OccupationDetailPage() {
 
           if (error) throw error
           if (data) {
-            // Transform the data to match our interface
             const transformedData = data.map((item: any) => ({
               ...item,
               visa: Array.isArray(item.visa) ? item.visa[0] : item.visa
@@ -326,7 +327,119 @@ export default function OccupationDetailPage() {
         </div>
       </div>
 
+      {/* ANZSCO Details Section */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h2 className="text-xl font-bold text-gray-900">
+              ANZSCO Details
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              ANZSCO version 2022 (reference only)
+            </p>
+          </div>
+
+          <div className="px-6 py-6 space-y-6">
+            {(() => {
+              const v2022Occ = occupations.find(o => o.catalogue_version === 'v2022')
+              
+              if (!v2022Occ) {
+                return (
+                  <p className="text-gray-500">
+                    ANZSCO v2022 details not available for this occupation.
+                  </p>
+                )
+              }
+
+              // Ensure arrays are actually arrays (fix for PostgreSQL text[] type)
+              const altTitles = Array.isArray(v2022Occ.alternative_titles) ? v2022Occ.alternative_titles : []
+              const specs = Array.isArray(v2022Occ.specialisations) ? v2022Occ.specialisations : []
+              
+              const hasAltTitles = altTitles.length > 0
+              const hasSpecs = specs.length > 0
+
+              if (!hasAltTitles && !hasSpecs) {
+                return (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 mb-2">
+                      No additional ANZSCO details available.
+                    </p>
+                    <a 
+                      href={`https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/${v2022Occ.code.substring(0,1)}/${v2022Occ.code.substring(0,2)}/${v2022Occ.code.substring(0,4)}/${v2022Occ.code}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+                    >
+                      View full description on ABS website
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                )
+              }
+
+              return (
+                <>
+                  {/* Alternative Titles */}
+                  {hasAltTitles && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-5 bg-blue-500 rounded"></span>
+                        Alternative Titles
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {altTitles.map((title, idx) => (
+                          <span 
+                            key={idx}
+                            className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm border border-blue-200"
+                          >
+                            {title}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Specialisations */}
+                  {hasSpecs && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-5 bg-purple-500 rounded"></span>
+                        Specialisations
+                      </h3>
+                      <div className="grid md:grid-cols-2 gap-2">
+                        {specs.map((spec, idx) => (
+                          <div 
+                            key={idx}
+                            className="px-3 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm border border-purple-200"
+                          >
+                            {spec}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Link to ABS */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <a 
+                      href={`https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/${v2022Occ.code.substring(0,1)}/${v2022Occ.code.substring(0,2)}/${v2022Occ.code.substring(0,4)}/${v2022Occ.code}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 text-sm"
+                    >
+                      View full occupation description on ABS website
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      </div>
+
+      {/* Visa Options Table */}
+      <div className="max-w-7xl mx-auto px-4 pb-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <h2 className="text-xl font-bold text-gray-900">

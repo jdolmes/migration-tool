@@ -14,7 +14,10 @@ Stores all ANZSCO occupation codes and their metadata.
 - `catalogue_version` (varchar) - "v1.3", "v2022", or "OSCA"
 - `principal_title` (varchar) - Occupation name (e.g., "Software Engineer")
 - `skill_level` (int, nullable) - Skill level 1-5, or NULL
+- `alternative_titles` (text[], nullable) - **NEW:** Array of alternative job titles
+- `specialisations` (text[], nullable) - **NEW:** Array of specialisation options
 - `created_at` (timestamp) - Record creation time
+- `updated_at` (timestamp) - Last update time
 
 **Indexes:**
 - Primary key on `id`
@@ -23,13 +26,27 @@ Stores all ANZSCO occupation codes and their metadata.
 
 **Sample Data:**
 ```
+code: 351112
+catalogue_version: v2022
+principal_title: Pastrycook
+skill_level: 3
+alternative_titles: ["Baker (Pastrycook)", "Cake Decorator", "Confectionery Baker"]
+specialisations: ["Wedding Cake Decorator", "Pastry Chef"]
+```
+
+**Sample Data (v1.3, no ANZSCO details):**
+```
 code: 261313
 catalogue_version: v1.3
 principal_title: Software Engineer
 skill_level: 1
+alternative_titles: NULL
+specialisations: NULL
 ```
 
 **Total Records:** 3,261 occupations across all catalogues
+**Records with Alternative Titles:** 331 (v2022 only)
+**Records with Specialisations:** 510 (v2022 only)
 
 ---
 
@@ -141,6 +158,29 @@ visas (visa_id)
 SELECT * FROM occupations WHERE code = '261313';
 ```
 
+**Get occupation with ANZSCO details (v2022 only):**
+```sql
+SELECT 
+    code,
+    principal_title,
+    alternative_titles,
+    specialisations
+FROM occupations 
+WHERE code = '351112' 
+  AND catalogue_version = 'v2022';
+```
+
+**Get all occupations with alternative titles:**
+```sql
+SELECT 
+    code,
+    principal_title,
+    alternative_titles
+FROM occupations 
+WHERE catalogue_version = 'v2022'
+  AND alternative_titles IS NOT NULL;
+```
+
 **Get all visas for an occupation:**
 ```sql
 SELECT ve.*, v.* 
@@ -159,3 +199,21 @@ WHERE anzsco_code = '261313'
   AND catalogue_version = 'v1.3'
   AND status = 'active';
 ```
+
+---
+
+## Data Sources
+
+### Alternative Titles & Specialisations
+- **Source:** Australian Bureau of Statistics (ABS)
+- **File:** ANZSCO 2022 Index of Principal Titles, Alternative Titles and Specialisations (June 2023)
+- **URL:** https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022
+- **Import Date:** February 6, 2026
+- **Coverage:** v2022 occupations only (1,076 codes)
+- **Records Updated:** 665 occupations (331 with alt titles, 510 with specialisations)
+
+### Notes
+- Alternative titles and specialisations are **only available for v2022** occupations
+- v1.3 and OSCA occupations have these fields as NULL
+- Data is stored as PostgreSQL text[] arrays for efficient querying
+- Link to full ANZSCO descriptions provided via ABS website

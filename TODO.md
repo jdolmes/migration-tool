@@ -19,6 +19,10 @@
 - [x] Clean legend explaining all symbols
 - [x] Visa ordering matches Anzscosearch (189, 190, 491, 485, 482, 186, etc.)
 - [x] Stream name formatting (Core Skills, TRT, Direct Entry)
+- [x] **ANZSCO Details section** ✨ (Added Feb 6, 2026)
+  - [x] Alternative titles display
+  - [x] Specialisations display
+  - [x] Link to ABS website for full descriptions
 
 ### Technical
 - [x] Next.js 16.1.6 with TypeScript
@@ -30,6 +34,9 @@
 
 ### Data
 - [x] 3,261 occupations imported (v1.3, v2022, OSCA)
+- [x] **665 occupations with ANZSCO details** ✨ (Added Feb 6, 2026)
+  - [x] 331 with alternative titles
+  - [x] 510 with specialisations
 - [x] 960 occupation list entries
 - [x] 8 visa subclasses with 13 total entries (including streams)
 - [x] 9,464 visa eligibility calculations
@@ -50,15 +57,16 @@
 
 ### High Priority (Week 5-6)
 
-#### 1. ANZSCO Details Tab
-- [ ] Add tab navigation (Visa Options | ANZSCO Details | State/Territory)
-- [ ] Display occupation description from ANZSCO
-- [ ] Show tasks and duties
-- [ ] Display alternative titles
-- [ ] Show specialisations
-- [ ] Support v1.3 vs v2022 comparison
-- **Impact:** Major feature gap vs Anzscosearch
-- **Effort:** 2-3 hours
+#### 1. ANZSCO Details Tab - PARTIALLY COMPLETE ✅
+- [x] Display alternative titles ✅ (Feb 6, 2026)
+- [x] Show specialisations ✅ (Feb 6, 2026)
+- [ ] Display occupation description (NOT in Excel files - needs web scraping or manual entry)
+- [ ] Show tasks and duties (NOT in Excel files - needs web scraping or manual entry)
+- [ ] Support v1.3 vs v2022 comparison (low priority - most users only need v2022)
+- **Status:** Basic ANZSCO details now working! Descriptions/tasks require additional data source.
+- **Next Step:** Consider manually adding descriptions for top 50 most-searched occupations
+- **Impact:** Major feature gap addressed - users can now see alternative titles and specialisations
+- **Remaining Effort:** 4-6 hours (if adding manual descriptions for top occupations)
 
 #### 2. Autocomplete Dropdown
 - [ ] Show suggestions as user types (no Enter needed)
@@ -66,12 +74,14 @@
 - [ ] Click suggestion to navigate to detail page
 - [ ] Show occupation code + title in suggestions
 - [ ] Limit to 5-10 suggestions
+- [ ] **BONUS:** Search alternative titles too (now possible with new data!)
 - **Impact:** Major UX improvement
-- **Effort:** 1 hour
+- **Effort:** 1-2 hours
 
 #### 3. Mobile Responsiveness
 - [ ] Table horizontal scroll on mobile
 - [ ] OR: Card-based layout for mobile
+- [ ] Test ANZSCO Details section on mobile (new requirement)
 - [ ] Test on iPhone/Android sizes
 - [ ] Ensure buttons are touch-friendly
 - [ ] Fix any layout issues
@@ -112,12 +122,13 @@
 - **Data:** Needs to be imported from state lists
 - **Effort:** 4-6 hours (including data import)
 
-#### 8. Alternative Titles Toggle
-- [ ] Add toggle: "Show Alternative Titles / Specialisations / NEC"
-- [ ] Expand search to include alternative titles
-- [ ] Display alternative titles in search results
-- **Impact:** Helps users find similar occupations
-- **Effort:** 2 hours
+#### 8. Search by Alternative Titles
+- [ ] Update search query to include alternative_titles field
+- [ ] Expand results when searching by alternative title
+- [ ] Show "Found via alternative title: [title]" indicator
+- **Impact:** Helps users find occupations by different job names
+- **Effort:** 1 hour (now that data is available!)
+- **Priority:** Moved up - now possible with imported data
 
 ---
 
@@ -177,6 +188,7 @@
 - [ ] Duplicate code in CheckIcon, XIcon, DashIcon components (could extract)
 - [ ] src/lib/supabase.ts is duplicate of lib/supabase.ts (remove one)
 - [ ] Hard-coded LIN URLs (should come from database)
+- [ ] **NEW:** ANZSCO Details section could be extracted into separate component
 
 ---
 
@@ -185,6 +197,7 @@
 ### Usage Metrics (Future)
 - [ ] Total searches per day
 - [ ] Most searched occupations
+- [ ] **NEW:** Alternative title search usage
 - [ ] Bounce rate
 - [ ] Average session duration
 - [ ] Mobile vs desktop usage
@@ -203,13 +216,16 @@
 - [x] Run `npm run build` successfully
 - [x] Check TypeScript errors (none)
 - [x] Test all major features
+- [x] **NEW: Test ANZSCO Details section** ✅
 - [x] Environment variables configured
 
 ### Post-Deployment
-- [x] Verify live site works
-- [x] Test search functionality
-- [x] Test detail pages
-- [x] Test on mobile device
+- [ ] Verify live site works
+- [ ] Test search functionality
+- [ ] Test detail pages
+- [ ] **NEW: Verify ANZSCO details display correctly** ✨
+- [ ] **NEW: Test alternative titles and specialisations** ✨
+- [ ] Test on mobile device
 - [ ] Set up monitoring/analytics
 - [ ] Share with test users for feedback
 
@@ -226,6 +242,8 @@
 - Success rate statistics by occupation
 - Community forum for each occupation
 - Connect with migration agents
+- **NEW:** Search by alternative title suggestion chips
+- **NEW:** "Similar occupations" based on specialisations
 
 ---
 
@@ -235,20 +253,24 @@
 - **Target users:** People researching Australian migration options
 - **Competitive advantage:** Free, comprehensive, up-to-date, fast
 - **Data update frequency:** Quarterly (when ANZSCO or lists change)
+- **NEW:** Alternative titles from official ABS ANZSCO 2022 Index (Feb 2026)
 
 ---
 
 ## 🎯 Next Session Goals
 
 **Immediate (Next 1-2 hours):**
-1. Fix Supabase RLS security warnings
-2. Add autocomplete dropdown to search
+1. Deploy ANZSCO Details feature to production (git push)
+2. Test on live site
+3. Fix Supabase RLS security warnings
 
 **This Week:**
-3. Add ANZSCO Details tab
-4. Improve mobile responsiveness
+4. Add search by alternative titles functionality
+5. Add autocomplete dropdown to search
+6. Improve mobile responsiveness
 
 **This Month:**
-5. Complete all high-priority backlog items
-6. Gather user feedback
-7. Iterate based on feedback
+7. Complete all high-priority backlog items
+8. Gather user feedback
+9. Iterate based on feedback
+10. Consider adding manual descriptions for top 20-50 occupations
