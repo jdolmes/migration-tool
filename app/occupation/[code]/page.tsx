@@ -20,6 +20,8 @@ interface Occupation {
   minor_group_title: string | null
   unit_group: string | null
   unit_group_title: string | null
+  description: string | null
+  tasks: string[] | null
 }
 
 interface VisaOption {
@@ -83,7 +85,7 @@ export default function OccupationDetailPage() {
         
         const { data: occData, error: occError } = await supabase
           .from('occupations')
-          .select('code, catalogue_version, principal_title, skill_level, alternative_titles, specialisations, major_group, major_group_title, sub_major_group, sub_major_group_title, minor_group, minor_group_title, unit_group, unit_group_title')
+          .select('code, catalogue_version, principal_title, skill_level, alternative_titles, specialisations, major_group, major_group_title, sub_major_group, sub_major_group_title, minor_group, minor_group_title, unit_group, unit_group_title, description, tasks')
           .eq('code', code)
           .order('catalogue_version')
 
@@ -362,12 +364,15 @@ export default function OccupationDetailPage() {
               const hasHierarchy = v2022Occ.major_group && v2022Occ.unit_group
               const altTitles = Array.isArray(v2022Occ.alternative_titles) ? v2022Occ.alternative_titles : []
               const specs = Array.isArray(v2022Occ.specialisations) ? v2022Occ.specialisations : []
+              const tasks = Array.isArray(v2022Occ.tasks) ? v2022Occ.tasks : []
               const hasAltTitles = altTitles.length > 0
               const hasSpecs = specs.length > 0
+              const hasDescription = v2022Occ.description && v2022Occ.description.trim().length > 0
+              const hasTasks = tasks.length > 0
 
               return (
                 <>
-                  {/* ANZSCO Hierarchy - NEW */}
+                  {/* ANZSCO Hierarchy */}
                   {hasHierarchy && (
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                       <div className="grid md:grid-cols-2 gap-3 text-sm">
@@ -388,6 +393,37 @@ export default function OccupationDetailPage() {
                           <span className="ml-2 text-gray-900">{v2022Occ.unit_group} - {v2022Occ.unit_group_title}</span>
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {hasDescription && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-5 bg-green-500 rounded"></span>
+                        Description
+                      </h3>
+                      <p className="text-gray-700 leading-relaxed">
+                        {v2022Occ.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Tasks */}
+                  {hasTasks && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-5 bg-orange-500 rounded"></span>
+                        Tasks Include
+                      </h3>
+                      <ul className="space-y-2">
+                        {tasks.map((task, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-gray-700 text-sm">
+                            <span className="text-orange-500 mt-1">•</span>
+                            <span>{task}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
 
