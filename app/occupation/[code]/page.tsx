@@ -22,6 +22,8 @@ interface Occupation {
   unit_group_title: string | null
   description: string | null
   tasks: string[] | null
+  unit_group_description: string | null
+  indicative_skill_level: string | null
 }
 
 interface VisaOption {
@@ -85,7 +87,7 @@ export default function OccupationDetailPage() {
         
         const { data: occData, error: occError } = await supabase
           .from('occupations')
-          .select('code, catalogue_version, principal_title, skill_level, alternative_titles, specialisations, major_group, major_group_title, sub_major_group, sub_major_group_title, minor_group, minor_group_title, unit_group, unit_group_title, description, tasks')
+          .select('code, catalogue_version, principal_title, skill_level, alternative_titles, specialisations, major_group, major_group_title, sub_major_group, sub_major_group_title, minor_group, minor_group_title, unit_group, unit_group_title, description, tasks, unit_group_description, indicative_skill_level')
           .eq('code', code)
           .order('catalogue_version')
 
@@ -463,6 +465,71 @@ export default function OccupationDetailPage() {
                             {spec}
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Unit Group Details */}
+                  {v2022Occ.unit_group && v2022Occ.unit_group_description && (
+                    <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4">
+                        Unit Group {v2022Occ.unit_group}: {v2022Occ.unit_group_title}
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        {/* Unit Group Description */}
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
+                          <p className="text-gray-700 leading-relaxed">
+                            {v2022Occ.unit_group_description}
+                          </p>
+                        </div>
+
+                        {/* Indicative Skill Level */}
+                        {v2022Occ.indicative_skill_level && (
+                          <div>
+                            <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs">
+                                {v2022Occ.skill_level || '1'}
+                              </span>
+                              Indicative Skill Level
+                            </h4>
+                            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                              {v2022Occ.indicative_skill_level}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Related Occupations */}
+                        {v2022Occ.unit_group === '2613' && (
+                          <div>
+                            <h4 className="font-semibold text-gray-900 mb-3">Occupations in this Unit Group</h4>
+                            <div className="grid md:grid-cols-2 gap-2">
+                              {[
+                                { code: '261311', title: 'Analyst Programmer' },
+                                { code: '261312', title: 'Developer Programmer' },
+                                { code: '261313', title: 'Software Engineer' },
+                                { code: '261314', title: 'Software Tester' },
+                                { code: '261315', title: 'Cyber Security Engineer' },
+                                { code: '261316', title: 'DevOps Engineer' },
+                                { code: '261317', title: 'Penetration Tester' },
+                                { code: '261399', title: 'Software and Applications Programmers nec' }
+                              ].map((occ) => (
+                                <a
+                                  key={occ.code}
+                                  href={`/occupation/${occ.code}`}
+                                  className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
+                                    occ.code === v2022Occ.code
+                                      ? 'bg-blue-100 text-blue-900 border-blue-300 font-semibold'
+                                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                                  }`}
+                                >
+                                  {occ.code}: {occ.title}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
