@@ -1,0 +1,52 @@
+# PROMPT FOR NEW CLAUDE CONVERSATIONS
+
+Copy and paste this when starting a new conversation about the Migration Tool project:
+
+---
+
+Hi Claude! I'm continuing work on my Australian Migration Hub project (ANZSCO occupation search tool).
+
+**Project Context:**
+I'm building a Next.js app that helps people find visa-eligible occupations in Australia. The app searches ANZSCO codes and shows which visas they qualify for.
+
+**Current Status:**
+- Frontend: 90% complete with occupation detail pages showing ANZSCO hierarchy, descriptions, tasks, and visa eligibility
+- Database: Supabase PostgreSQL with ~3,000 occupation codes
+- Data Import: 3 unit groups complete (16 occupations with full data)
+- Tech Stack: Next.js 16, TypeScript, Tailwind CSS, Supabase, Vercel
+
+**I've uploaded SESSION_HANDOFF.md which contains:**
+- Complete project overview
+- Database schema
+- Current workflow for adding ANZSCO data
+- LLM prompt for processing unit groups
+- All key files and patterns
+
+**What I need help with today:**
+[DESCRIBE YOUR CURRENT TASK - Examples:]
+- "I want to process the next 5 unit groups (2631-2635)"
+- "I need to fix a bug where [describe issue]"
+- "I want to add a new feature for [describe feature]"
+- "Can you review my progress and suggest next steps?"
+
+**Please:**
+1. Review the SESSION_HANDOFF.md document
+2. Let me know you understand the current state
+3. Help me continue where I left off
+
+The project is live and working - database changes take effect immediately, code changes need git push.
+
+Thanks!
+
+---
+
+**Alternative shorter version if context window is limited:**
+
+Hi Claude! Continuing my Australian Migration Hub project (Next.js ANZSCO search tool). I've uploaded SESSION_HANDOFF.md with complete project context. Currently working on importing ANZSCO unit group data - 3 done, ~361 to go. Tech: Next.js/TypeScript/Supabase/Vercel. Can you review the handoff doc and help me [DESCRIBE TASK]?
+
+---
+
+**Files to upload with this prompt:**
+- SESSION_HANDOFF.md (comprehensive context)
+- anzsco_progress_tracker.csv (optional - shows progress)
+- Any relevant code files you're working on
