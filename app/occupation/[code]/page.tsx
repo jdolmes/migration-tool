@@ -54,6 +54,7 @@ export default function OccupationDetailPage() {
   const code = params.code as string
 
   const [occupations, setOccupations] = useState<Occupation[]>([])
+  const [relatedOccupations, setRelatedOccupations] = useState<{code: string, principal_title: string}[]>([])
   const [allVisaOptions, setAllVisaOptions] = useState<VisaOption[]>([])
   const [listMembership, setListMembership] = useState<ListMembership>({
     v13: { MLTSSL: false, STSOL: false, ROL: false },
@@ -95,6 +96,21 @@ export default function OccupationDetailPage() {
         if (!occData || occData.length === 0) throw new Error('Occupation not found')
 
         setOccupations(occData)
+        
+        // Fetch related occupations in the same unit group
+        const v2022Occ = occData.find(o => o.catalogue_version === 'v2022')
+        if (v2022Occ && v2022Occ.unit_group) {
+          const { data: relatedData, error: relatedError } = await supabase
+            .from('occupations')
+            .select('code, principal_title')
+            .eq('unit_group', v2022Occ.unit_group)
+            .eq('catalogue_version', 'v2022')
+            .order('code')
+          
+          if (!relatedError && relatedData) {
+            setRelatedOccupations(relatedData)
+          }
+        }
         
       } catch (err: any) {
         setError(err.message)
@@ -501,20 +517,13 @@ export default function OccupationDetailPage() {
                         )}
 
                         {/* Related Occupations */}
-                        {v2022Occ.unit_group === '2613' && (
+                        {relatedOccupations.length > 0 && (
                           <div>
-                            <h4 className="font-semibold text-gray-900 mb-3">Occupations in this Unit Group</h4>
+                            <h4 className="font-semibold text-gray-900 mb-3">
+                              Occupations in this Unit Group ({relatedOccupations.length})
+                            </h4>
                             <div className="grid md:grid-cols-2 gap-2">
-                              {[
-                                { code: '261311', title: 'Analyst Programmer' },
-                                { code: '261312', title: 'Developer Programmer' },
-                                { code: '261313', title: 'Software Engineer' },
-                                { code: '261314', title: 'Software Tester' },
-                                { code: '261315', title: 'Cyber Security Engineer' },
-                                { code: '261316', title: 'DevOps Engineer' },
-                                { code: '261317', title: 'Penetration Tester' },
-                                { code: '261399', title: 'Software and Applications Programmers nec' }
-                              ].map((occ) => (
+                              {relatedOccupations.map((occ) => (
                                 <a
                                   key={occ.code}
                                   href={`/occupation/${occ.code}`}
@@ -524,7 +533,7 @@ export default function OccupationDetailPage() {
                                       : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                                   }`}
                                 >
-                                  {occ.code}: {occ.title}
+                                  {occ.code}: {occ.principal_title}
                                 </a>
                               ))}
                             </div>
