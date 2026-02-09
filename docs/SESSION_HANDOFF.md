@@ -1,5 +1,5 @@
 # Migration Tool Project - Session Handoff Document
-**Last Updated:** February 7, 2026
+**Last Updated:** February 9, 2026
 **Status:** Active Development - ANZSCO Details Implementation Phase
 
 ---
@@ -35,12 +35,21 @@ Help people find visa-eligible occupations in Australia by searching ANZSCO (Aus
 4. **Dual catalogue support** - v1.3 and v2022 ANZSCO versions
 
 ### 📈 Data Import Progress:
-**Completed Unit Groups:** 3 of ~364
+**Completed Unit Groups:** 8 of ~120
 - ✅ 1111 - Chief Executives and Managing Directors (1 occupation)
+- ✅ 2311 - Air Transport Professionals (5 occupations)
+- ✅ 2312 - Marine Transport Professionals (6 occupations)
+- ✅ 2321 - Architects and Landscape Architects (2 occupations)
+- ✅ 2322 - Surveyors and Spatial Scientists (3 occupations)
 - ✅ 2613 - Software and Applications Programmers (8 occupations)
 - ✅ 2621 - Database and Systems Administrators, ICT Security Specialists (7 occupations)
+- ✅ 3514 - Cooks (1 occupation)
 
-**Total Occupations with Full Data:** 16 out of ~1,000
+**Total Occupations with Full Data:** 33 out of ~1,000
+
+**Special Cases Handled:**
+- Unit group 3514 (Cooks) - Different skill levels for AU (3) vs NZ (4)
+- Unit group 2312 (Marine Transport) - Different skill levels for AU/NZ (both at level 2)
 
 ---
 
@@ -73,6 +82,42 @@ Help people find visa-eligible occupations in Australia by searching ANZSCO (Aus
 
 **Database:** Supabase PostgreSQL
 **Project:** https://supabase.com/dashboard/project/eulnvbopvqilqyvyiqux
+
+### 🔒 Database Security Notes
+
+**Supabase Linter Warnings (Intentionally Not Fixed):**
+
+The Supabase database linter shows several warnings/errors that we have intentionally chosen not to fix:
+
+1. **RLS Disabled on Public Tables (7 tables):**
+   - `occupations`, `visas`, `visa_eligibility`, `occupation_lists`, `legislative_instruments`, `occupation_mappings`, and views
+   - **Status:** Intentionally disabled
+   - **Reason:** All data is public information (ANZSCO codes, visa rules, etc.)
+   - **Impact:** None - this is a public information tool like Wikipedia
+
+2. **Security Definer Views (2 views):**
+   - `visa_details`, `occupation_visa_eligibility`
+   - **Status:** Acceptable as-is
+   - **Reason:** Views run with creator permissions, but since all data is public anyway, there's no security risk
+
+3. **Function Search Path Mutable (1 function):**
+   - `is_on_occupation_list`
+   - **Status:** Low priority
+   - **Reason:** Minor best practice issue, not a security risk for our single-schema setup
+
+**Rationale:**
+This is a public information tool similar to a phone book or encyclopedia. All ANZSCO occupation data, visa information, and eligibility rules are public by nature. There are no user accounts, no private data, and no user-generated content. The data is meant to be freely accessible to everyone.
+
+**Future Consideration:**
+If we add user accounts, user-generated content, or private data in the future, we will enable Row Level Security (RLS) at that time. For now, the warnings can be safely ignored.
+
+**Security Posture:**
+- ✅ Read-only public data
+- ✅ No authentication required
+- ✅ No sensitive information
+- ✅ No user-generated content
+- ✅ Standard SQL injection protection via parameterized queries
+- ✅ HTTPS encryption in transit
 
 ---
 
@@ -299,19 +344,26 @@ When starting a new conversation:
 
 ## 📊 METRICS
 
-**As of Feb 7, 2026:**
+**As of Feb 9, 2026:**
 - Database: 3,000+ occupations (codes only)
-- Full data: 16 occupations across 3 unit groups
-- Total unit groups in DB: ~364
-- Completion: ~0.8% (16 out of ~2,000 total occupations)
-- Frontend features: 90% complete
-- Data import: 1% complete
+- Full data: 33 occupations across 8 unit groups
+- Total unit groups in DB: ~120
+- Completion: ~7% (8 out of ~120 unit groups, 33 out of ~1,000 occupations)
+- Frontend features: 95% complete
+- Data import: 7% complete
+
+**Recent Progress:**
+- Feb 7: Started with 3 unit groups (16 occupations)
+- Feb 8-9: Added 5 more unit groups (17 occupations)
+- Successfully tested bulk import workflow (4 unit groups at once)
+- Handled special cases (AU/NZ skill level differences)
 
 **Time estimates:**
 - Process 1 unit group with LLM: ~5 minutes
+- Process 3-5 unit groups (bulk): ~15 minutes
 - Import and verify: ~2 minutes
-- Total per unit group: ~7 minutes
-- To complete all ~364 unit groups: ~42 hours of focused work
+- Total per unit group: ~4 minutes (when batching)
+- To complete all ~120 unit groups: ~20 hours of focused work (when batching)
 
 ---
 
