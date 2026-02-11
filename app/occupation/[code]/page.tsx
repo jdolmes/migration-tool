@@ -469,17 +469,17 @@ export default function OccupationDetailPage() {
 
         {/* ANZSCO DETAILS TAB - NOW SECONDARY */}
         {activeTab === 'anzsco-details' && v2022Occ && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-xl font-bold text-gray-900">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-8 py-6 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
                 ANZSCO Details
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-500 mt-2 font-medium">
                 ANZSCO version 2022 (reference only)
               </p>
             </div>
 
-            <div className="px-6 py-6 space-y-6">
+            <div className="px-8 py-8 space-y-8">
               {(() => {
                 const hasHierarchy = v2022Occ.major_group && v2022Occ.unit_group
                 const altTitles = Array.isArray(v2022Occ.alternative_titles) ? v2022Occ.alternative_titles : []
@@ -494,23 +494,23 @@ export default function OccupationDetailPage() {
                   <>
                     {/* ANZSCO Hierarchy */}
                     {hasHierarchy && (
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="grid md:grid-cols-2 gap-3 text-sm">
+                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-100">
+                        <div className="grid md:grid-cols-2 gap-4 text-sm">
                           <div>
-                            <span className="font-semibold text-gray-700">Major Group:</span>
-                            <span className="ml-2 text-gray-900">{v2022Occ.major_group} - {v2022Occ.major_group_title}</span>
+                            <span className="font-bold text-gray-700">Major Group:</span>
+                            <span className="ml-2 text-gray-900 font-medium">{v2022Occ.major_group} - {v2022Occ.major_group_title}</span>
                           </div>
                           <div>
-                            <span className="font-semibold text-gray-700">Sub-Major Group:</span>
-                            <span className="ml-2 text-gray-900">{v2022Occ.sub_major_group} - {v2022Occ.sub_major_group_title}</span>
+                            <span className="font-bold text-gray-700">Sub-Major Group:</span>
+                            <span className="ml-2 text-gray-900 font-medium">{v2022Occ.sub_major_group} - {v2022Occ.sub_major_group_title}</span>
                           </div>
                           <div>
-                            <span className="font-semibold text-gray-700">Minor Group:</span>
-                            <span className="ml-2 text-gray-900">{v2022Occ.minor_group} - {v2022Occ.minor_group_title}</span>
+                            <span className="font-bold text-gray-700">Minor Group:</span>
+                            <span className="ml-2 text-gray-900 font-medium">{v2022Occ.minor_group} - {v2022Occ.minor_group_title}</span>
                           </div>
                           <div>
-                            <span className="font-semibold text-gray-700">Unit Group:</span>
-                            <span className="ml-2 text-gray-900">{v2022Occ.unit_group} - {v2022Occ.unit_group_title}</span>
+                            <span className="font-bold text-gray-700">Unit Group:</span>
+                            <span className="ml-2 text-gray-900 font-medium">{v2022Occ.unit_group} - {v2022Occ.unit_group_title}</span>
                           </div>
                         </div>
                       </div>
@@ -519,11 +519,11 @@ export default function OccupationDetailPage() {
                     {/* Description */}
                     {hasDescription && (
                       <div>
-                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <span className="w-1.5 h-5 bg-green-500 rounded"></span>
+                        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-3 text-lg">
+                          <span className="w-1 h-6 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full"></span>
                           Description
                         </h3>
-                        <p className="text-gray-700 leading-relaxed">
+                        <p className="text-gray-700 leading-relaxed text-base">
                           {v2022Occ.description}
                         </p>
                       </div>
@@ -532,15 +532,15 @@ export default function OccupationDetailPage() {
                     {/* Tasks */}
                     {hasTasks && (
                       <div>
-                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <span className="w-1.5 h-5 bg-orange-500 rounded"></span>
+                        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-3 text-lg">
+                          <span className="w-1 h-6 bg-gradient-to-b from-orange-500 to-amber-600 rounded-full"></span>
                           Tasks Include
                         </h3>
-                        <ul className="space-y-2">
+                        <ul className="space-y-3">
                           {tasks.map((task, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-gray-700 text-sm">
-                              <span className="text-orange-500 mt-1">•</span>
-                              <span>{task}</span>
+                            <li key={idx} className="flex items-start gap-3 text-gray-700 text-base">
+                              <span className="text-orange-500 mt-1.5 font-bold">•</span>
+                              <span className="leading-relaxed">{task}</span>
                             </li>
                           ))}
                         </ul>
@@ -550,13 +550,13 @@ export default function OccupationDetailPage() {
                     {/* Alternative Titles */}
                     {hasAltTitles && (
                       <div>
-                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <span className="w-1.5 h-5 bg-blue-500 rounded"></span>
+                        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-3 text-lg">
+                          <span className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-600 rounded-full"></span>
                           Alternative Titles
                         </h3>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-3">
                           {altTitles.map((title, idx) => (
-                            <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm border border-blue-200">
+                            <span key={idx} className="px-4 py-2 bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 rounded-lg text-sm border-2 border-blue-200 font-medium">
                               {title}
                             </span>
                           ))}
@@ -567,13 +567,13 @@ export default function OccupationDetailPage() {
                     {/* Specialisations */}
                     {hasSpecs && (
                       <div>
-                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <span className="w-1.5 h-5 bg-purple-500 rounded"></span>
+                        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-3 text-lg">
+                          <span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-600 rounded-full"></span>
                           Specialisations
                         </h3>
-                        <div className="grid md:grid-cols-2 gap-2">
+                        <div className="grid md:grid-cols-2 gap-3">
                           {specs.map((spec, idx) => (
-                            <div key={idx} className="px-3 py-2 bg-purple-50 text-purple-700 rounded border border-purple-200 text-sm">
+                            <div key={idx} className="px-4 py-3 bg-gradient-to-r from-purple-50 to-fuchsia-50 text-purple-700 rounded-lg border-2 border-purple-200 text-sm font-medium">
                               {spec}
                             </div>
                           ))}
