@@ -5,6 +5,40 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, ExternalLink, Info, X, Check } from 'lucide-react'
 
+// ============================================
+// VISA LIST CONFIGURATION
+// ============================================
+// Add or modify visa list requirements here
+const VISA_LIST_RULES: {
+  [key: string]: {
+    lists: ('MLTSSL' | 'STSOL' | 'ROL' | 'CSOL')[]
+    hasInfoButton: boolean
+    infoTitle?: string
+    infoText?: string
+  }
+} = {
+  '189': { lists: ['MLTSSL'], hasInfoButton: false },
+  '190': { lists: ['MLTSSL', 'STSOL'], hasInfoButton: false },
+  '491-state': { lists: ['MLTSSL', 'STSOL', 'ROL'], hasInfoButton: false },
+  '491-family': { lists: ['MLTSSL'], hasInfoButton: false },
+  '494': { lists: ['MLTSSL', 'ROL'], hasInfoButton: false },
+  '482-core': { lists: ['CSOL'], hasInfoButton: false },
+  '482-specialist': { 
+    lists: [], 
+    hasInfoButton: true,
+    infoTitle: 'Subclass 482 SID - Specialist Skills',
+    infoText: 'Special Requirements (No occupation list)\n\nEligible occupations must be from ANZSCO Major Groups 1, 2, 4, 5, or 6 only.'
+  },
+  '186-direct': { lists: ['CSOL'], hasInfoButton: false },
+  '186-trt': { 
+    lists: [], 
+    hasInfoButton: true,
+    infoTitle: 'Subclass 186 ENS - TRT Stream',
+    infoText: 'Special Requirements (No occupation list)\n\nYour current occupation must match the occupation from your previous Subclass 457, 482 TSS, or 482 SID visa.\n\nNote: This pathway is for transitioning from temporary to permanent residence in the same occupation.'
+  },
+  '485': { lists: ['MLTSSL'], hasInfoButton: false },
+}
+
 interface Occupation {
   code: string
   catalogue_version: string
@@ -235,17 +269,68 @@ export default function OccupationDetailPage() {
     <span className="text-gray-400 text-xl">—</span>
   )
 
-  const getListIndicator = (visaCatalogueVersion: string, listName: 'MLTSSL' | 'STSOL' | 'ROL' | 'CSOL') => {
+  const getVisaKey = (subclass: string, stream: string | null): string => {
+    if (subclass === '482') {
+      if (stream === 'Core Skills') return '482-core'
+      if (stream === 'Specialist') return '482-specialist'
+    }
+    if (subclass === '186') {
+      if (stream === 'Direct Entry') return '186-direct'
+      if (stream === 'Temporary Residence Transition (TRT)') return '186-trt'
+    }
+    if (subclass === '491') {
+      if (stream === 'State Nominated') return '491-state'
+      if (stream === 'Family Sponsored') return '491-family'
+    }
+    return subclass
+  }
+
+  const getListIndicator = (
+    subclass: string, 
+    stream: string | null, 
+    visaCatalogueVersion: string, 
+    listName: 'MLTSSL' | 'STSOL' | 'ROL' | 'CSOL'
+  ) => {
+    const visaKey = getVisaKey(subclass, stream)
+    const rules = VISA_LIST_RULES[visaKey]
+    
+    if (!rules) return <DashIcon />
+    
+    // If this list is not required for this visa, show dash
+    if (!rules.lists.includes(listName)) return <DashIcon />
+    
+    // Check if occupation is on the required list
     if (visaCatalogueVersion === 'v1.3') {
-      if (listName === 'CSOL') return <DashIcon />
+      if (listName === 'CSOL') return <DashIcon /> // CSOL doesn't exist in v1.3
       if (listName === 'MLTSSL') return listMembership.v13.MLTSSL ? <CheckIcon /> : <XIcon />
       if (listName === 'STSOL') return listMembership.v13.STSOL ? <CheckIcon /> : <XIcon />
       if (listName === 'ROL') return listMembership.v13.ROL ? <CheckIcon /> : <XIcon />
     } else if (visaCatalogueVersion === 'v2022') {
       if (listName === 'CSOL') return listMembership.v2022.CSOL ? <CheckIcon /> : <XIcon />
-      return <DashIcon />
+      if (['MLTSSL', 'STSOL', 'ROL'].includes(listName)) return <DashIcon /> // These don't exist in v2022
     }
     return <DashIcon />
+  }
+
+  const getInfoButton = (subclass: string, stream: string | null) => {
+    const visaKey = getVisaKey(subclass, stream)
+    const rules = VISA_LIST_RULES[visaKey]
+    
+    if (!rules || !rules.hasInfoButton) return null
+    
+    return (
+      <button
+        onClick={() => setCaveatModal({
+          show: true,
+          title: rules.infoTitle || 'Special Requirements',
+          content: rules.infoText || ''
+        })}
+        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+        aria-label="View special requirements"
+      >
+        <Info className="w-4 h-4" />
+      </button>
+    )
   }
 
   const formatStreamName = (stream: string | null): string => {
@@ -445,13 +530,13 @@ export default function OccupationDetailPage() {
                               <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                           ) : (
-                            <span className="text-gray-400 text-sm">—</span>
+                            getInfoButton(option.visa.subclass, option.visa.stream) || <span className="text-gray-400 text-sm">—</span>
                           )}
                         </td>
-                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.catalogue_version, 'MLTSSL')}</td>
-                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.catalogue_version, 'STSOL')}</td>
-                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.catalogue_version, 'ROL')}</td>
-                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.catalogue_version, 'CSOL')}</td>
+                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.subclass, option.visa.stream, option.visa.catalogue_version, 'MLTSSL')}</td>
+                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.subclass, option.visa.stream, option.visa.catalogue_version, 'STSOL')}</td>
+                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.subclass, option.visa.stream, option.visa.catalogue_version, 'ROL')}</td>
+                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.subclass, option.visa.stream, option.visa.catalogue_version, 'CSOL')}</td>
                       </tr>
                     ))
                   ) : (
@@ -656,6 +741,33 @@ export default function OccupationDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Info Modal */}
+      {caveatModal.show && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="px-8 py-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">{caveatModal.title}</h3>
+              <button
+                onClick={() => setCaveatModal({ show: false, title: '', content: '' })}
+                className="p-2 hover:bg-white rounded-lg transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="px-8 py-6 overflow-y-auto max-h-[calc(80vh-80px)]">
+              <div className="prose prose-sm max-w-none">
+                {caveatModal.content.split('\n').map((line, idx) => (
+                  <p key={idx} className="mb-3 text-gray-700 leading-relaxed">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
