@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { trackEvent } from '../../../lib/analytics'
 import { ArrowLeft, ExternalLink, Info, X, Check } from 'lucide-react'
+import LeadWidget from '@/components/lead-capture/LeadWidget'
 
 // ============================================
 // VISA LIST CONFIGURATION
@@ -105,6 +106,57 @@ export default function OccupationDetailPage() {
   
   // NEW: Active tab state - DEFAULTS TO VISA OPTIONS
   const [activeTab, setActiveTab] = useState<'visa-options' | 'anzsco-details'>('visa-options')
+
+  // Lead capture widget state
+  const [showLeadWidget, setShowLeadWidget] = useState(false)
+
+  // Intelligent trigger logic for LeadWidget
+  useEffect(() => {
+    // Check if widget was already shown this session
+    if (sessionStorage.getItem('lead_widget_shown') === 'true') {
+      return
+    }
+
+    const triggerWidget = () => {
+      if (sessionStorage.getItem('lead_widget_shown') !== 'true') {
+        sessionStorage.setItem('lead_widget_shown', 'true')
+        setShowLeadWidget(true)
+      }
+    }
+
+    // 1. OCCUPATION VIEW COUNT - Track views, trigger at 3+
+    const currentCount = parseInt(sessionStorage.getItem('occupation_views_count') || '0', 10)
+    const newCount = currentCount + 1
+    sessionStorage.setItem('occupation_views_count', String(newCount))
+
+    if (newCount >= 3) {
+      triggerWidget()
+      return
+    }
+
+    // 2. TIME ON SITE - 5 minute timer
+    const timeoutTimer = setTimeout(() => {
+      triggerWidget()
+    }, 300000) // 5 minutes
+
+    // 3. EXIT INTENT - Mouse moves to top of viewport
+    const handleMouseMove = (e: MouseEvent) => {
+      if (e.clientY < 10) {
+        triggerWidget()
+      }
+    }
+
+    // Only add exit intent listener after a brief delay to avoid false triggers
+    const exitIntentDelay = setTimeout(() => {
+      document.addEventListener('mousemove', handleMouseMove)
+    }, 2000)
+
+    return () => {
+      clearTimeout(timeoutTimer)
+      clearTimeout(exitIntentDelay)
+      document.removeEventListener('mousemove', handleMouseMove)
+    }
+  }, [])
 
   const getLINUrl = (linCode: string | null): string => {
     if (!linCode) return 'https://www.legislation.gov.au/'
@@ -815,6 +867,27 @@ trackEvent('occupation_viewed', {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Lead Capture Widget */}
+      {showLeadWidget && (
+        <LeadWidget
+          occupations={[...new Set(occupations.map(o => o.principal_title))]}
+          visaPathways={allVisaOptions
+            .filter(v => v.is_eligible)
+            .map(v => `${v.visa.subclass} ${v.visa.stream || ''}`.trim())
+            .slice(0, 3)
+          }
+          onSubmit={() => {
+            console.log('Lead form submitted')
+            setShowLeadWidget(false)
+            // TODO: Open full lead form
+          }}
+          onDismiss={() => {
+            setShowLeadWidget(false)
+            // TODO: Track dismissal
+          }}
+        />
       )}
     </main>
   )
