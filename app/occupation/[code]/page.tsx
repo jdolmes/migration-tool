@@ -333,7 +333,7 @@ trackEvent('occupation_viewed', {
         onClick={() => {
           trackEvent('info_button_clicked', {
             visaSubclass: subclass,
-            visaStream: stream,
+            visaStream: stream || undefined,
             occupationCode: code,
             metadata: {
               info_type: rules.infoTitle || 'Special Requirements'
