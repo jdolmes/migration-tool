@@ -557,7 +557,7 @@ trackEvent('occupation_viewed', {
                               className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-1.5 hover:underline"
                               onClick={() => trackEvent('lin_clicked', {
                                 visaSubclass: option.visa.subclass,
-                                visaStream: option.visa.stream,
+                                visaStream: option.visa.stream || undefined,
                                 occupationCode: code,
                                 metadata: {
                                   lin_code: option.visa.legislative_instrument,
@@ -747,9 +747,10 @@ trackEvent('occupation_viewed', {
                                   key={occ.code}
                                   href={`/occupation/${occ.code}`}
                                   onClick={() => trackEvent('related_occupation_clicked', {
-                                    fromOccupation: code,
-                                    toOccupation: occ.code,
+                                    occupationCode: code,
                                     metadata: {
+                                      from_occupation: code,
+                                      to_occupation: occ.code,
                                       from_title: v2022Occ.principal_title,
                                       to_title: occ.principal_title
                                     }
