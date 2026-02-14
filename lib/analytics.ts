@@ -14,12 +14,29 @@ function getSessionId(): string {
 
 // Get user's country from IP (using a free service)
 async function getUserCountry(): Promise<string | null> {
+  if (typeof window === 'undefined') return null
+
+  // Check if we already have the country cached for this session
+  const cached = sessionStorage.getItem('user_country')
+  if (cached && cached !== 'null') return cached
+
   try {
     const response = await fetch('https://ipapi.co/json/')
     const data = await response.json()
-    return data.country_code || null
+    const country = data.country_code || null
+
+    // Cache the result (even if null, to avoid repeated failed requests)
+    if (country) {
+      sessionStorage.setItem('user_country', country)
+    } else {
+      sessionStorage.setItem('user_country', 'null')
+    }
+
+    return country
   } catch (error) {
     console.error('Failed to get user country:', error)
+    // Cache the failure to avoid repeated requests
+    sessionStorage.setItem('user_country', 'null')
     return null
   }
 }
