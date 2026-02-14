@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { trackEvent } from '@/lib/analytics'
+import { trackEvent } from '../../../lib/analytics'
 import { ArrowLeft, ExternalLink, Info, X, Check } from 'lucide-react'
 
 // ============================================
