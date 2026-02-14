@@ -561,7 +561,7 @@ trackEvent('occupation_viewed', {
                                 occupationCode: code,
                                 metadata: {
                                   lin_code: option.visa.legislative_instrument,
-                                  eligibility: option.isEligible ? 'eligible' : 'not_eligible'
+                                  eligibility: option.is_eligible ? 'eligible' : 'not_eligible'
                                 }
                               })}
                             >
