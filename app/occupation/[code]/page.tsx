@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { trackEvent } from '@/lib/analytics'
 import { ArrowLeft, ExternalLink, Info, X, Check } from 'lucide-react'
 
 // ============================================
@@ -133,6 +134,15 @@ export default function OccupationDetailPage() {
         if (!occData || occData.length === 0) throw new Error('Occupation not found')
 
         setOccupations(occData)
+
+        // 🆕 Track occupation view
+trackEvent('occupation_viewed', {
+  occupationCode: code,
+  metadata: {
+    principal_title: occData[0]?.principal_title,
+    catalogues: occData.map(o => o.catalogue_version).join(',')
+  }
+})
         
         // Fetch related occupations in the same unit group
         const v2022Occ = occData.find(o => o.catalogue_version === 'v2022')
@@ -320,11 +330,21 @@ export default function OccupationDetailPage() {
     
     return (
       <button
-        onClick={() => setCaveatModal({
-          show: true,
-          title: rules.infoTitle || 'Special Requirements',
-          content: rules.infoText || ''
-        })}
+        onClick={() => {
+          trackEvent('info_button_clicked', {
+            visaSubclass: subclass,
+            visaStream: stream,
+            occupationCode: code,
+            metadata: {
+              info_type: rules.infoTitle || 'Special Requirements'
+            }
+          })
+          setCaveatModal({
+            show: true,
+            title: rules.infoTitle || 'Special Requirements',
+            content: rules.infoText || ''
+          })
+        }}
         className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
         aria-label="View special requirements"
       >
@@ -430,7 +450,12 @@ export default function OccupationDetailPage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-1">
             <button
-              onClick={() => setActiveTab('visa-options')}
+              onClick={() => {
+  trackEvent('tab_switched', {
+    metadata: { from: activeTab, to: 'visa-options' }
+  })
+  setActiveTab('visa-options')
+}}
               className={`px-8 py-4 font-semibold text-sm transition-all relative ${
                 activeTab === 'visa-options'
                   ? 'text-blue-600'
@@ -446,7 +471,12 @@ export default function OccupationDetailPage() {
               )}
             </button>
             <button
-              onClick={() => setActiveTab('anzsco-details')}
+              onClick={() => {
+  trackEvent('tab_switched', {
+    metadata: { from: activeTab, to: 'anzsco-details' }
+  })
+  setActiveTab('anzsco-details')
+}}
               className={`px-8 py-4 font-semibold text-sm transition-all relative ${
                 activeTab === 'anzsco-details'
                   ? 'text-blue-600'
@@ -525,6 +555,15 @@ export default function OccupationDetailPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-1.5 hover:underline"
+                              onClick={() => trackEvent('lin_clicked', {
+                                visaSubclass: option.visa.subclass,
+                                visaStream: option.visa.stream,
+                                occupationCode: code,
+                                metadata: {
+                                  lin_code: option.visa.legislative_instrument,
+                                  eligibility: option.isEligible ? 'eligible' : 'not_eligible'
+                                }
+                              })}
                             >
                               {option.visa.legislative_instrument}
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -707,6 +746,14 @@ export default function OccupationDetailPage() {
                                 <a
                                   key={occ.code}
                                   href={`/occupation/${occ.code}`}
+                                  onClick={() => trackEvent('related_occupation_clicked', {
+                                    fromOccupation: code,
+                                    toOccupation: occ.code,
+                                    metadata: {
+                                      from_title: v2022Occ.principal_title,
+                                      to_title: occ.principal_title
+                                    }
+                                  })}
                                   className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
                                     occ.code === v2022Occ.code
                                       ? 'bg-blue-100 text-blue-900 border-blue-300 font-semibold'
