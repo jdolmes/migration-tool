@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { trackEvent } from '@/lib/analytics'
 
 interface Occupation {
   code: string
@@ -63,6 +64,15 @@ export function useOccupationSearch(searchTerm: string) {
 
         const resultArray = Object.values(grouped)
         setResults(resultArray)
+
+        // 🆕 Track search event
+        trackEvent('search_performed', {
+          searchTerm: searchTerm,
+          metadata: {
+            results_count: resultArray.length
+          }
+        })
+
       } catch (err: any) {
         setError(err.message)
         setResults([])
