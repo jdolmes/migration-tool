@@ -28,10 +28,10 @@ async function getUserCountry(): Promise<string | null> {
 export async function trackEvent(
   eventType: string,
   data?: {
-    occupationCode?: string
-    visaSubclass?: string
-    visaStream?: string
-    searchTerm?: string
+    occupationCode?: string | null
+    visaSubclass?: string | null
+    visaStream?: string | null
+    searchTerm?: string | null
     metadata?: Record<string, any>
   }
 ) {
