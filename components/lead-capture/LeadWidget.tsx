@@ -1,58 +1,70 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { X, MessageCircle, Sparkles } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { MessageCircle, Sparkles } from 'lucide-react'
+import LeadForm from './LeadForm'
+
+import type { LeadFormData } from './LeadForm'
 
 interface LeadWidgetProps {
   occupations: string[]
-  visaPathways: string[]
-  onSubmit: () => void
+  isExpanded?: boolean
+  onSubmit: (data: LeadFormData) => void
   onDismiss: () => void
 }
 
 export default function LeadWidget({
   occupations,
-  visaPathways,
+  isExpanded = false,
   onSubmit,
   onDismiss,
 }: LeadWidgetProps) {
-  const [isVisible, setIsVisible] = useState(false)
-  const [isMinimized, setIsMinimized] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(true) // Start minimized (bubble)
   const [isDismissed, setIsDismissed] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const prevIsExpandedRef = useRef(isExpanded)
 
-  // Trigger slide-in animation on mount
+  console.log('[LeadWidget] Render - isExpanded:', isExpanded, 'isMinimized:', isMinimized)
+
+  // Auto-expand ONLY when isExpanded changes from false to true
   useEffect(() => {
-    const showTimer = setTimeout(() => setIsVisible(true), 100)
-    return () => clearTimeout(showTimer)
-  }, [])
+    const wasExpanded = prevIsExpandedRef.current
+    const nowExpanded = isExpanded
 
-  // Auto-minimize after 10 seconds
-  useEffect(() => {
-    if (isMinimized || isDismissed) return
+    console.log('[LeadWidget] useEffect - wasExpanded:', wasExpanded, '→ nowExpanded:', nowExpanded)
 
-    const timer = setTimeout(() => {
-      setIsMinimized(true)
-    }, 10000)
+    // Detect transition: false → true
+    if (!wasExpanded && nowExpanded) {
+      console.log('[LeadWidget] Timer fired! Auto-expanding widget')
+      setIsMinimized(false)
+    }
 
-    return () => clearTimeout(timer)
-  }, [isMinimized, isDismissed])
+    // Update ref for next render
+    prevIsExpandedRef.current = isExpanded
+  }, [isExpanded])
 
-  const handleDismiss = () => {
-    setIsDismissed(true)
-    setIsVisible(false)
-    // Allow animation to complete before calling onDismiss
-    setTimeout(onDismiss, 300)
+  const handleShowForm = () => {
+    console.log('[LeadWidget] "Yes, Let\'s Talk" clicked → showing form')
+    setShowForm(true)
   }
 
-  const handleSubmit = () => {
-    onSubmit()
+  const handleFormBack = () => {
+    console.log('[LeadWidget] Form back clicked → returning to widget')
+    setShowForm(false)
   }
 
-  const handleMaybeLater = () => {
+  const handleFormSubmit = (data: LeadFormData) => {
+    console.log('[LeadWidget] Form submitted, passing to parent')
+    onSubmit(data)
+  }
+
+  const handleMinimize = () => {
+    console.log('[LeadWidget] "Maybe Later" clicked → minimizing to bubble')
     setIsMinimized(true)
   }
 
   const handleExpand = () => {
+    console.log('[LeadWidget] Chat bubble clicked → expanding widget')
     setIsMinimized(false)
   }
 
@@ -64,21 +76,24 @@ export default function LeadWidget({
     return `${occupations[0]} and ${occupations.length - 1} other${occupations.length > 2 ? 's' : ''}`
   }
 
-  // Format visa pathways for display
-  const formatVisaPathways = () => {
-    if (visaPathways.length === 0) return 'potential visa options'
-    if (visaPathways.length === 1) return `the ${visaPathways[0]}`
-    return 'multiple visa pathways'
-  }
-
-  if (isDismissed && !isVisible) {
+  if (isDismissed) {
     return null
   }
 
-  // Render both states with smooth transitions between them
+  // Show form instead of widget when user clicks "Yes, Let's Talk"
+  if (showForm) {
+    return (
+      <LeadForm
+        occupations={occupations}
+        onSubmit={handleFormSubmit}
+        onBack={handleFormBack}
+      />
+    )
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {/* Minimized chat bubble */}
+      {/* Minimized chat bubble - always visible when minimized */}
       <button
         onClick={handleExpand}
         className={`
@@ -89,7 +104,7 @@ export default function LeadWidget({
           flex items-center justify-center
           transition-all duration-300 ease-in-out
           hover:scale-110 hover:shadow-xl hover:shadow-blue-500/40
-          ${isMinimized && isVisible ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}
+          ${isMinimized ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}
         `}
         aria-label="Open chat"
       >
@@ -106,75 +121,67 @@ export default function LeadWidget({
           border border-gray-100
           overflow-hidden
           transition-all duration-300 ease-in-out origin-bottom-right
-          ${!isMinimized && isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}
+          ${!isMinimized ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}
         `}
       >
-      {/* Header */}
-      <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-5 py-4">
-        <button
-          onClick={handleDismiss}
-          className="absolute top-3 right-3 p-1 rounded-full hover:bg-white/20 transition-colors"
-          aria-label="Close"
-        >
-          <X className="w-5 h-5 text-white" />
-        </button>
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-white font-semibold">Great news!</h3>
-            <p className="text-blue-100 text-sm">We found pathways for you</p>
+        {/* Header */}
+        <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-white font-semibold">Great news!</h3>
+              <p className="text-blue-100 text-sm">We found pathways for you</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="px-5 py-4">
-        <p className="text-gray-700 text-sm leading-relaxed">
-          Based on your interest in <span className="font-semibold text-gray-900">{formatOccupations()}</span>,
-          you may be eligible for <span className="font-semibold text-blue-600">{formatVisaPathways()}</span>.
-        </p>
-        <p className="text-gray-600 text-sm mt-3">
-          Would you like to speak with a migration specialist who can help you explore your options?
-        </p>
-      </div>
+        {/* Content */}
+        <div className="px-5 py-4">
+          <p className="text-gray-700 text-sm leading-relaxed">
+            Based on your interest in <span className="font-semibold text-gray-900">{formatOccupations()}</span>,
+            you may be eligible for <span className="font-semibold text-blue-600">multiple visa pathways</span>.
+          </p>
+          <p className="text-gray-600 text-sm mt-3">
+            Would you like to speak with a migration specialist who can help you explore your options?
+          </p>
+        </div>
 
-      {/* Actions */}
-      <div className="px-5 pb-5 space-y-2">
-        <button
-          onClick={handleSubmit}
-          className="
-            w-full py-3 px-4
-            bg-gradient-to-r from-blue-600 to-indigo-600
-            text-white font-medium
-            rounded-xl
-            shadow-lg shadow-blue-500/30
-            hover:shadow-xl hover:shadow-blue-500/40
-            hover:from-blue-500 hover:to-indigo-500
-            transition-all duration-200
-            active:scale-[0.98]
-          "
-        >
-          Yes, Let&apos;s Talk
-        </button>
-        <button
-          onClick={handleMaybeLater}
-          className="
-            w-full py-3 px-4
-            bg-gray-50 hover:bg-gray-100
-            text-gray-600 font-medium
-            rounded-xl
-            border border-gray-200
-            transition-all duration-200
-            active:scale-[0.98]
-          "
-        >
-          Maybe Later
-        </button>
-      </div>
+        {/* Actions */}
+        <div className="px-5 pb-5 space-y-2">
+          <button
+            onClick={handleShowForm}
+            className="
+              w-full py-3 px-4
+              bg-gradient-to-r from-blue-600 to-indigo-600
+              text-white font-medium
+              rounded-xl
+              shadow-lg shadow-blue-500/30
+              hover:shadow-xl hover:shadow-blue-500/40
+              hover:from-blue-500 hover:to-indigo-500
+              transition-all duration-200
+              active:scale-[0.98]
+            "
+          >
+            Yes, Let&apos;s Talk
+          </button>
+          <button
+            onClick={handleMinimize}
+            className="
+              w-full py-3 px-4
+              bg-gray-50 hover:bg-gray-100
+              text-gray-600 font-medium
+              rounded-xl
+              border border-gray-200
+              transition-all duration-200
+              active:scale-[0.98]
+            "
+          >
+            Maybe Later
+          </button>
+        </div>
       </div>
     </div>
   )
 }
-

@@ -107,54 +107,99 @@ export default function OccupationDetailPage() {
   // NEW: Active tab state - DEFAULTS TO VISA OPTIONS
   const [activeTab, setActiveTab] = useState<'visa-options' | 'anzsco-details'>('visa-options')
 
-  // Lead capture widget state
-  const [showLeadWidget, setShowLeadWidget] = useState(false)
+  // Lead capture widget state - tracks if widget should auto-expand
+  const [widgetExpanded, setWidgetExpanded] = useState(false)
+  const [widgetDismissed, setWidgetDismissed] = useState(false)
 
-  // Intelligent trigger logic for LeadWidget
+  // Handle lead form submission - save to Supabase
+  async function handleLeadSubmit(formData: {
+    name: string
+    email: string
+    phone: string
+    location: 'onshore' | 'offshore' | ''
+    currentVisa?: string
+    timeline: string
+    message?: string
+  }) {
+    try {
+      // Get session ID from analytics
+      const sessionId = sessionStorage.getItem('session_id') || 'unknown'
+
+      // Calculate intent score from session events
+      // (Simple version for now - form submissions indicate high intent)
+      const intentScore = 5
+
+      // Prepare lead data for database
+      const leadData = {
+        session_id: sessionId,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        location: formData.location,
+        current_visa: formData.currentVisa || null,
+        timeline: formData.timeline,
+        message: formData.message || null,
+        occupation_code: code,
+        intent_score: intentScore,
+        status: 'new',
+        created_at: new Date().toISOString()
+      }
+
+      // Insert into Supabase
+      const { data, error } = await supabase
+        .from('leads')
+        .insert(leadData)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error saving lead:', error)
+        // Still show success to user (fail gracefully)
+        return
+      }
+
+      console.log('Lead saved successfully:', data)
+
+      // Track lead submission event
+      trackEvent('lead_submitted', {
+        occupationCode: code,
+        metadata: {
+          location: formData.location,
+          timeline: formData.timeline,
+          has_phone: !!formData.phone,
+          has_message: !!formData.message
+        }
+      })
+
+      // TODO: Create session summary in lead_summaries table
+
+    } catch (error) {
+      console.error('Failed to save lead:', error)
+      // Fail gracefully - user still sees success message
+    }
+  }
+
+  // Auto-expand widget after 2 minutes (once per session)
   useEffect(() => {
-    // Check if widget was already shown this session
-    if (sessionStorage.getItem('lead_widget_shown') === 'true') {
+    console.log('[LeadWidget] Auto-expand useEffect running')
+    console.log('[LeadWidget] Already expanded this session:', sessionStorage.getItem('lead_widget_auto_expanded'))
+
+    if (sessionStorage.getItem('lead_widget_auto_expanded') === 'true') {
+      console.log('[LeadWidget] Skipping - already auto-expanded this session')
       return
     }
 
-    const triggerWidget = () => {
-      if (sessionStorage.getItem('lead_widget_shown') !== 'true') {
-        sessionStorage.setItem('lead_widget_shown', 'true')
-        setShowLeadWidget(true)
-      }
-    }
-
-    // 1. OCCUPATION VIEW COUNT - Track views, trigger at 3+
-    const currentCount = parseInt(sessionStorage.getItem('occupation_views_count') || '0', 10)
-    const newCount = currentCount + 1
-    sessionStorage.setItem('occupation_views_count', String(newCount))
-
-    if (newCount >= 3) {
-      triggerWidget()
-      return
-    }
-
-    // 2. TIME ON SITE - 5 minute timer
-    const timeoutTimer = setTimeout(() => {
-      triggerWidget()
-    }, 300000) // 5 minutes
-
-    // 3. EXIT INTENT - Mouse moves to top of viewport
-    const handleMouseMove = (e: MouseEvent) => {
-      if (e.clientY < 10) {
-        triggerWidget()
-      }
-    }
-
-    // Only add exit intent listener after a brief delay to avoid false triggers
-    const exitIntentDelay = setTimeout(() => {
-      document.addEventListener('mousemove', handleMouseMove)
-    }, 2000)
+    console.log('[LeadWidget] Setting 2-minute timer for auto-expand')
+    const timer = setTimeout(() => {
+      console.log('[LeadWidget] Timer fired! Expanding widget now')
+      sessionStorage.setItem('lead_widget_auto_expanded', 'true')
+      setWidgetExpanded(true)
+      console.log('[LeadWidget] widgetExpanded set to true')
+    }, 120000) // 2 minutes - shows user engagement
 
     return () => {
-      clearTimeout(timeoutTimer)
-      clearTimeout(exitIntentDelay)
-      document.removeEventListener('mousemove', handleMouseMove)
+      console.log('[LeadWidget] Cleanup - clearing timer')
+      clearTimeout(timer)
     }
   }, [])
 
@@ -869,23 +914,14 @@ trackEvent('occupation_viewed', {
         </div>
       )}
 
-      {/* Lead Capture Widget */}
-      {showLeadWidget && (
+      {/* Lead Capture Widget - Always visible as chat bubble */}
+      {!widgetDismissed && (
         <LeadWidget
           occupations={[...new Set(occupations.map(o => o.principal_title))]}
-          visaPathways={allVisaOptions
-            .filter(v => v.is_eligible)
-            .map(v => `${v.visa.subclass} ${v.visa.stream || ''}`.trim())
-            .slice(0, 3)
-          }
-          onSubmit={() => {
-            console.log('Lead form submitted')
-            setShowLeadWidget(false)
-            // TODO: Open full lead form
-          }}
+          isExpanded={widgetExpanded}
+          onSubmit={handleLeadSubmit}
           onDismiss={() => {
-            setShowLeadWidget(false)
-            // TODO: Track dismissal
+            setWidgetDismissed(true)
           }}
         />
       )}
