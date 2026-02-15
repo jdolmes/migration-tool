@@ -14,7 +14,7 @@
 
 ### UI/UX
 - [x] Professional table layout (Anzscosearch-inspired)
-- [x] Color-coded visa categories (green=permanent, yellow=temporary)
+- [x] Color-coded visa categories (green=permanent, gray=temporary)
 - [x] List membership indicators (✓/✗/—) for MLTSSL, STSOL, ROL, CSOL
 - [x] Direct LIN links to legislation.gov.au
 - [x] Info button modals for special visa requirements (482 Specialist, 186 TRT)
@@ -26,7 +26,7 @@
   - [x] Tab navigation (Visa Options default)
   - [x] Vibrant gradients and modern color palette
   - [x] Better spacing, typography, and visual hierarchy
-- [x] **ANZSCO Details section** ✨ (Added Feb 6, 2026)
+- [x] **ANZSCO Details section** ✨ (Feb 6, 2026)
   - [x] Alternative titles display
   - [x] Specialisations display
   - [x] Link to ABS website for full descriptions
@@ -40,9 +40,26 @@
 - [x] TypeScript strict mode enabled
 - [x] **Config-driven VISA_LIST_RULES** for maintainability (Feb 12, 2026)
 
+### Analytics & Tracking ✨ (Feb 14, 2026 - DEPLOYED)
+- [x] **Phase 1 Analytics - COMPLETE & LIVE** 🎉
+  - [x] Database tables: `analytics_events`, `leads`, `lead_summaries`
+  - [x] Event tracking utility (`lib/analytics.ts`)
+  - [x] Session ID generation and tracking
+  - [x] User geolocation with session-based caching
+  - [x] **Search tracking** (`search_performed`)
+  - [x] **Occupation view tracking** (`occupation_viewed`)
+  - [x] **Tab switch tracking** (`tab_switched`)
+  - [x] **LIN click tracking** (`lin_clicked`) ⭐ High intent signal
+  - [x] **Info button tracking** (`info_button_clicked`) ⭐ Complex visa interest
+  - [x] **Related occupation tracking** (`related_occupation_clicked`)
+  - [x] Production deployment verified (25+ events captured)
+  - [x] Zero cost infrastructure ($0/month)
+
+**Status:** ✅ ALL 6 EVENT TYPES LIVE IN PRODUCTION
+
 ### Data
 - [x] 3,261 occupations imported (v1.3, v2022, OSCA)
-- [x] **665 occupations with ANZSCO details** ✨ (Added Feb 6, 2026)
+- [x] **665 occupations with ANZSCO details** ✨ (Feb 6, 2026)
   - [x] 331 with alternative titles
   - [x] 510 with specialisations
 - [x] 960 occupation list entries
@@ -53,226 +70,230 @@
 
 ## 🚧 In Progress
 
-### Mobile Responsiveness
-- [ ] **Mobile-friendly visa table** (Deferred - Feb 12, 2026)
-  - Status: Desktop works perfectly, mobile needs card layout
-  - Priority: Medium (add after analytics system)
-  - Options: Card layout, accordion, or simplified table
+**Nothing currently in progress** - Ready to start new features!
 
 ---
 
 ## 📋 Backlog (Prioritized)
 
-### 🔥 HIGHEST PRIORITY - Analytics & Monetization (NEW - Feb 12, 2026)
+### 🔥 HIGHEST PRIORITY - Phase 2: RMA Lead Generation
 
-**Full Feature Report:** See `docs/Analytics_RMA_Lead_Feature_Report.md`
+**Status:** Ready to build (database & analytics foundation complete)  
+**Estimated Time:** 12-15 hours  
+**Monthly Cost:** $12 (Calendly)  
+**Revenue Potential:** $2,000-10,000/month  
+**Profit Margin:** 99%+
 
-#### Phase 1: Core Analytics & Lead System (Weeks 1-2)
-**Revenue Potential:** $2,000-10,000/month | **Cost:** $0/month
+**Full Details:** See `docs/Phase_2_Implementation_Plan.md` and `docs/Analytics_RMA_Lead_Feature_Report.md`
 
-- [ ] **Basic Analytics Setup** (8-10 hours)
-  - [ ] Verify Vercel Analytics access (already tracking!)
-  - [ ] Create `analytics_events` table in Supabase
-  - [ ] Track key events:
-    - [ ] `search_performed` - What users search for
-    - [ ] `occupation_viewed` - Which occupations interest them
-    - [ ] `lin_clicked` - Serious research intent
-    - [ ] `info_button_clicked` - Confusion points
-    - [ ] `tab_switched` - Engagement patterns
-    - [ ] `related_occupation_clicked` - Career exploration
-  - [ ] Test event collection
+#### Core Features to Build:
 
-- [ ] **RMA Lead Generation Form** (12-15 hours)
-  - [ ] Design lead capture form with consent checkbox
-  - [ ] Create `leads` and `lead_summaries` tables
-  - [ ] Build session summary generation
-  - [ ] Implement intent scoring algorithm (1-10 scale)
-  - [ ] Set up email service (Resend.com or SendGrid free tier)
-  - [ ] Create RMA email template with research summary
-  - [ ] Test end-to-end flow
+**1. Lead Capture Widget** (4-5 hours)
+- [ ] Option A: "Friendly Helper" bottom-right nudge
+- [ ] Context-aware messaging based on user behavior
+- [ ] Dismissible with "maybe later" option
+- [ ] Triggers on high-intent signals:
+  - [ ] LIN clicks (legal research)
+  - [ ] Info button clicks (complex visas)
+  - [ ] Multiple occupation views
+  - [ ] Extended session time (10+ minutes)
 
-- [ ] **Privacy Compliance** (4-6 hours)
-  - [ ] Write privacy policy (GDPR/CCPA compliant)
-  - [ ] Create terms of service
-  - [ ] Add privacy policy page to site
-  - [ ] Implement data deletion request handling
-  - [ ] Add privacy links to footer
-  - [ ] **Decision:** Use consent-based approach (recommended)
+**2. Lead Capture Form** (2-3 hours)
+- [ ] Minimal fields (name, email, phone, country)
+- [ ] Optional: Preferred contact method
+- [ ] Privacy consent checkbox
+- [ ] Calendly booking integration
+- [ ] Mobile-friendly design
 
-- [ ] **Basic Analytics Dashboard** (8-12 hours)
-  - [ ] Build admin page `/admin/analytics`
-  - [ ] Top occupations report
-  - [ ] Geographic breakdown
-  - [ ] Intent score analytics
-  - [ ] Lead pipeline tracking
-  - [ ] Data export functionality
+**3. Lead Dashboard** (3-4 hours)
+- [ ] RMA login (simple password auth with bcrypt)
+- [ ] View all leads with intent scores
+- [ ] Session summaries:
+  - [ ] Occupations viewed
+  - [ ] Visas researched  
+  - [ ] High-intent signals (LIN clicks, etc.)
+  - [ ] Recommended approach
+- [ ] Filter by status (new, contacted, converted)
+- [ ] Export to CSV
 
-**Expected Outcome:**
-- Generate 50-200 qualified leads/month
-- Revenue: $2,000-10,000/month ($40-60 per lead)
-- Free infrastructure (within Supabase/Vercel limits)
-- 99%+ profit margin
+**4. Session Summary Generation** (2-3 hours)
+- [ ] Automatic summary when lead submits
+- [ ] Query analytics_events by session_id
+- [ ] Calculate intent score (1-10):
+  - [ ] LIN clicks: +4 points
+  - [ ] Info clicks: +2 points
+  - [ ] Multiple occupations: +2 points
+  - [ ] 10+ min session: +3 points
+- [ ] Generate recommended approach for RMA
+- [ ] Highlight high-intent behaviors
+
+**5. Email Notifications** (1-2 hours) - OPTIONAL
+- [ ] Set up Resend.com (free tier: 3,000 emails/month)
+- [ ] Email template for new leads
+- [ ] Include session summary
+- [ ] Link to lead dashboard
+
+**6. Privacy Policy Page** (1-2 hours)
+- [ ] GDPR/CCPA compliant
+- [ ] Clear data usage explanation
+- [ ] Opt-out instructions
+- [ ] Contact for privacy inquiries
 
 ---
 
-#### Phase 2: Enhanced User Features (Weeks 3-4)
-**Impact:** +30% traffic, +20% leads
+### 💡 ALTERNATIVE PATH: Visa Detail Pages First
 
-- [ ] **Visa Information Pages** (1-2 days)
-  - [ ] Create template for visa pages
-  - [ ] Build 10-15 visa info pages (189, 190, 482, 186, etc.)
-  - [ ] Content: Overview, requirements, costs, processing times
-  - [ ] Show pathway to PR (e.g., 482 → 186)
-  - [ ] List top 10 eligible occupations per visa
-  - [ ] Link to official resources (LIN, Home Affairs)
-  - [ ] SEO optimization
-  - **Benefit:** Keep users on site, build authority, improve SEO
+**Rationale:** Build content while collecting more analytics data  
+**Timeline:** 8-12 hours (10-15 pages)  
+**Then:** Proceed to Phase 2 with richer insights
+
+**Benefits:**
+- ✅ More valuable content for users
+- ✅ SEO opportunity (rank for "482 visa", "189 visa", etc.)
+- ✅ More tracking points (visa page views)
+- ✅ Let analytics run 1-2 weeks before Phase 2
+
+**Tasks:**
+- [ ] **Create Visa Page Template** (2 hours)
+  - [ ] Clean, informative layout
+  - [ ] Reusable component structure
+  
+- [ ] **Build Individual Pages** (30-45 min each):
+  - [ ] `/visa/189` - Skilled Independent
+  - [ ] `/visa/190` - Skilled Nominated  
+  - [ ] `/visa/491` - Skilled Work Regional
+  - [ ] `/visa/494` - Skilled Employer Sponsored Regional
+  - [ ] `/visa/482` - TSS / SID
+  - [ ] `/visa/186` - Employer Nomination
+  - [ ] `/visa/485` - Temporary Graduate
+  - [ ] Plus 5-10 more visa types
+
+- [ ] **Content Per Page:**
+  - [ ] Overview and purpose
+  - [ ] Key requirements
+  - [ ] Processing times
+  - [ ] Costs and fees
+  - [ ] Pathway to permanent residence
+  - [ ] Top 10 eligible occupations (from database)
+  - [ ] Links to LIN and Home Affairs
+
+- [ ] **Add Tracking** (15 min per page):
+  - [ ] `visa_page_viewed` event
+  - [ ] Scroll depth tracking
+  - [ ] CTA clicks
+
+---
+
+### 📊 DECISION POINT: What to Build Next?
+
+**Option A: Phase 2 Lead Generation NOW** (12-15 hours)
+- ✅ Start generating revenue immediately
+- ✅ Test RMA partnership model
+- ✅ Validate lead quality with real data
+- ⚠️ Need to find 1-2 beta RMA partners first
+
+**Option B: Let Analytics Run 1 Week, Then Phase 2**
+- ✅ Collect more behavioral data (50-100+ events)
+- ✅ Validate intent scoring accuracy
+- ✅ Build with real user insights
+- ✅ Identify top occupations for visa pages
+- ⏳ Delays revenue by 1 week
+
+**Option C: Visa Pages First, Then Phase 2** (20-27 hours total)
+- ✅ More valuable content
+- ✅ SEO benefits
+- ✅ Additional tracking data
+- ✅ Better insights for Phase 2
+- ⏳ Delays revenue by 2-3 weeks
+
+**Current Recommendation:** **Option B** - Let analytics run 1 week, analyze data, then build Phase 2 with insights
+
+---
+
+### High Priority (After Phase 2 or Visa Pages)
+
+#### 1. Mobile Optimization (4-6 hours)
+- [ ] Mobile-friendly visa table
+  - [ ] Card layout for <768px screens
+  - [ ] Collapsible sections
+  - [ ] Touch-friendly buttons
+- [ ] Test on iPhone/Android
+- [ ] Fix legend spacing on mobile
+
+**Current Status:** Desktop perfect, mobile needs work  
+**Impact:** 30-40% of traffic is mobile
+
+#### 2. ANZSCO Details Enhancement (8-12 hours)
+- [x] Alternative titles ✅
+- [x] Specialisations ✅
+- [ ] Occupation descriptions (manual for top 50 based on analytics)
+- [ ] Tasks and duties (manual for top 50 based on analytics)
+- [ ] v1.3 vs v2022 comparison view (low priority)
+
+**Strategy:** Use analytics to identify top 50 most-viewed occupations, add descriptions for those first
+
+#### 3. Autocomplete Dropdown (1-2 hours)
+- [ ] Show suggestions as user types
+- [ ] Include alternative titles in search
+- [ ] Keyboard navigation support
+- [ ] Limit to 5-10 suggestions
+
+**Impact:** Major UX improvement
+
+#### 4. Last Updated Date (30 minutes)
+- [ ] Display in header: "Last Updated: [date]"
+- [ ] Pull from database or config
+
+**Impact:** Trust and transparency
+
+---
+
+### Medium Priority (Future)
+
+#### 5. Analytics-Powered Features
+*Require 1-2 weeks of data collection first*
 
 - [ ] **"People Also Researched"** (4-6 hours)
-  - [ ] Show occupation combinations based on user behavior
-  - [ ] Display "73% also viewed: Developer Programmer"
-  - [ ] Geographic variants (e.g., "From India? 89% researched...")
-  - [ ] Guide career exploration
-  - **Benefit:** Increases engagement, reveals user patterns
+  - [ ] Query analytics for common occupation pairs
+  - [ ] Display on occupation detail page
+  - [ ] Geographic variants ("Users from India also viewed...")
 
-- [ ] **Visa Pathway Indicators** (2 hours)
-  - [ ] Show "482 → 186 pathway available" on visa table
-  - [ ] Highlight permanent residence pathways
-  - [ ] Add tooltip explanations
-  - **Benefit:** Helps users plan long-term
-
----
-
-#### Phase 3: Advanced Features (Month 2-3)
-**Impact:** +50% engagement, +15% leads
-
-- [ ] **Similar Occupations (Visa-Based)** (6-8 hours)
+- [ ] **Similar Occupations** (6-8 hours)
   - [ ] Show alternatives with same visa eligibility
-  - [ ] "Want easier pathway? Try these occupations (on STSOL)"
-  - [ ] Help users optimize for visa eligibility
+  - [ ] "Want easier pathway?" suggestions
 
 - [ ] **Visa Comparison Tool** (1-2 days)
-  - [ ] Side-by-side comparison for an occupation
-  - [ ] Compare: 482 vs 189 vs 190 (duration, cost, requirements)
-  - [ ] Show "Best for you" recommendation
-  - [ ] Decision support for users
+  - [ ] Side-by-side comparison
+  - [ ] Recommend best option
 
-- [ ] **Career Progression Paths** (2-3 days)
-  - [ ] Show career ladder (Entry → Mid → Senior → Management)
-  - [ ] Link occupations to progression levels
-  - [ ] Display visa options at each level
-  - [ ] Understand long-term planning
+#### 6. Standard Features
 
-- [ ] **Geographic Insights** (1-2 days)
-  - [ ] Show where occupation is in demand (cities/regions)
-  - [ ] Regional opportunities for 491/494 visas
-  - [ ] Based on visa application data
+- [ ] **Search by Alternative Titles** (1 hour)
+  - [ ] Update search query
+  - [ ] Show indicator when found via alt title
 
----
+- [ ] **Assessing Authority Display** (1 hour)
+  - [ ] Show TRA, ACS, VETASSESS, etc.
+  - [ ] Link to authority website
 
-### High Priority (Week 5-6)
+- [ ] **State/Territory Tab** (4-6 hours)
+  - [ ] Import state nomination data
+  - [ ] Display state-specific requirements
 
-#### 1. ANZSCO Details Tab - PARTIALLY COMPLETE ✅
-- [x] Display alternative titles ✅ (Feb 6, 2026)
-- [x] Show specialisations ✅ (Feb 6, 2026)
-- [ ] Display occupation description (NOT in Excel files - needs web scraping or manual entry)
-- [ ] Show tasks and duties (NOT in Excel files - needs web scraping or manual entry)
-- [ ] Support v1.3 vs v2022 comparison (low priority - most users only need v2022)
-- **Status:** Basic ANZSCO details now working! Descriptions/tasks require additional data source.
-- **Next Step:** Consider manually adding descriptions for top 50 most-searched occupations
-- **Impact:** Major feature gap addressed - users can now see alternative titles and specialisations
-- **Remaining Effort:** 4-6 hours (if adding manual descriptions for top occupations)
-
-#### 2. Autocomplete Dropdown
-- [ ] Show suggestions as user types (no Enter needed)
-- [ ] Dropdown appears below search bar
-- [ ] Click suggestion to navigate to detail page
-- [ ] Show occupation code + title in suggestions
-- [ ] Limit to 5-10 suggestions
-- [ ] **BONUS:** Search alternative titles too (now possible with new data!)
-- **Impact:** Major UX improvement
-- **Effort:** 1-2 hours
-
-#### 3. Last Updated Date
-- [ ] Add to header: "Last Updated: [date]"
-- [ ] Pull from database or config file
-- [ ] Update date automatically on data refresh
-- **Impact:** Trust and transparency
-- **Effort:** 30 minutes
-
----
-
-### Medium Priority (Week 7-8)
-
-#### 4. Assessing Authority Display
-- [ ] Show assessing authority on detail page (TRA, ACS, VETASSESS, etc.)
-- [ ] Add link to authority website
-- [ ] Display assessment requirements summary
-- **Data:** Already in database, just needs UI
-- **Effort:** 1 hour
-
-#### 5. Catalogue Filter Buttons
-- [ ] Add top-level filters: [v1.2/v1.3/v2022] [v2022] [OSCA]
-- [ ] Control entire search scope
-- [ ] Match Anzscosearch UX exactly
-- [ ] Update search results based on filter
-- **Impact:** Advanced filtering for power users
-- **Effort:** 1-2 hours
-
-#### 6. State/Territory Tab
-- [ ] Show which states/territories nominate this occupation
-- [ ] Display state-specific requirements
-- [ ] Link to state nomination programs
-- [ ] Show current nomination status
-- **Data:** Needs to be imported from state lists
-- **Effort:** 4-6 hours (including data import)
-
-#### 7. Search by Alternative Titles
-- [ ] Update search query to include alternative_titles field
-- [ ] Expand results when searching by alternative title
-- [ ] Show "Found via alternative title: [title]" indicator
-- **Impact:** Helps users find occupations by different job names
-- **Effort:** 1 hour (now that data is available!)
-- **Priority:** Moved up - now possible with imported data
+- [ ] **Catalogue Filter Buttons** (1-2 hours)
+  - [ ] [v1.2/v1.3/v2022] [v2022] [OSCA]
+  - [ ] Match Anzscosearch UX
 
 ---
 
 ### Lower Priority (Future)
 
-#### 8. Points Calculator
-- [ ] Age points calculator
-- [ ] English language points
-- [ ] Work experience points
-- [ ] Education points
-- [ ] Partner points
-- [ ] Total points summary
-- **Effort:** 6-8 hours
-
-#### 9. Export Features
-- [ ] Export occupation report to PDF
-- [ ] Include visa eligibility table
-- [ ] Include occupation description
-- [ ] Professional formatting
-- **Effort:** 4-6 hours
-
-#### 10. User Accounts (Optional)
-- [ ] Save favorite occupations
-- [ ] Track application progress
-- [ ] Email notifications
-- **Effort:** 10+ hours
-
-#### 11. Advanced Search Filters
-- [ ] Filter by skill level
-- [ ] Filter by visa category (permanent/temporary)
-- [ ] Filter by assessing authority
-- [ ] Filter by shortage status
-- **Effort:** 2-3 hours
-
-#### 12. Comparison Feature
-- [ ] Compare multiple occupations side-by-side
-- [ ] Show differences in visa eligibility
-- [ ] Compare points potential
-- **Effort:** 4-6 hours
+- [ ] Points Calculator (6-8 hours)
+- [ ] Export to PDF (4-6 hours)
+- [ ] User Accounts (10+ hours) - Optional
+- [ ] Advanced Search Filters (2-3 hours)
+- [ ] Occupation Comparison (4-6 hours)
+- [ ] Career Progression Paths (2-3 days)
 
 ---
 
@@ -284,146 +305,159 @@
 - [ ] Legend takes up too much space on mobile
 
 ### Technical Debt
-- [ ] Duplicate code in CheckIcon, XIcon, DashIcon components (could extract)
-- [ ] src/lib/supabase.ts is duplicate of lib/supabase.ts (remove one)
+- [ ] Duplicate code in CheckIcon, XIcon, DashIcon components
+- [ ] src/lib/supabase.ts is duplicate of lib/supabase.ts
 - [ ] Hard-coded LIN URLs (should come from database)
-- [ ] ANZSCO Details section could be extracted into separate component
+- [ ] ANZSCO Details section could be extracted into component
 
 ---
 
 ## 📊 Metrics to Track
 
-### Usage Metrics (Analytics System - NEW)
-- [ ] Total searches per day
-- [ ] Most searched occupations
-- [ ] Search terms (what people are looking for)
-- [ ] Alternative title search usage
-- [ ] Occupation views by country
-- [ ] Visa interest patterns (LIN clicks)
-- [ ] Info button clicks (confusion points)
-- [ ] Tab switching behavior
-- [ ] Career pathway exploration
-- [ ] Bounce rate
-- [ ] Average session duration
-- [ ] Mobile vs desktop usage
+### Analytics Metrics (Currently Tracking ✅)
+- [x] Search queries and results
+- [x] Occupation views by code and country
+- [x] Visa interest (LIN clicks, info buttons)
+- [x] Tab engagement
+- [x] Career exploration (related occupations)
+- [x] Session duration and journeys
+- [x] Geographic distribution
 
-### Lead Generation Metrics (NEW)
-- [ ] Lead form submissions per month
+### Lead Generation Metrics (Phase 2)
+- [ ] Lead form submissions per week/month
 - [ ] Consent opt-in rate (target: 70-80%)
-- [ ] Average intent score (target: 6-7/10)
+- [ ] Average intent score (target: 7+/10)
 - [ ] RMA conversion rate (target: 40-60%)
-- [ ] Revenue per lead (target: $40-60)
+- [ ] Revenue per lead (target: $100-500)
 - [ ] Total monthly revenue
 
 ### Performance Metrics
-- [ ] Page load time (<2 seconds target)
-- [ ] Search response time (<500ms target)
-- [ ] Vercel deployment time (~2 minutes)
+- [ ] Page load time (<2 seconds)
+- [ ] Search response time (<500ms)
+- [ ] Analytics event reliability
+- [ ] Mobile usability score
 
 ---
 
 ## 🚀 Deployment Checklist
 
 ### Pre-Deployment
-- [x] Test locally with `npm run dev`
-- [x] Run `npm run build` successfully
-- [x] Check TypeScript errors (none)
-- [x] Test all major features
-- [x] Test ANZSCO Details section ✅
-- [x] Test info button modals ✅
+- [x] Test locally
+- [x] TypeScript build succeeds
+- [x] All features tested
+- [x] Analytics tracking verified ✅
 - [x] Environment variables configured
 
 ### Post-Deployment
-- [ ] Verify live site works
-- [ ] Test search functionality
-- [ ] Test detail pages
-- [ ] Verify ANZSCO details display correctly ✨
-- [ ] Test alternative titles and specialisations ✨
-- [ ] Test info button modals ✨
-- [ ] Test on mobile device
-- [ ] Set up monitoring/analytics
-- [ ] Share with test users for feedback
+- [x] Live site verified ✅
+- [x] Search working ✅
+- [x] Detail pages working ✅
+- [x] Analytics collecting data ✅
+- [ ] Test on mobile (needs optimization)
+- [ ] Share with test users
 
 ---
 
 ## 💡 Feature Ideas (Brainstorm)
 
 ### User Experience
-- Compare v1.3 vs v2022 occupation descriptions side-by-side
-- Show occupation trends (growing/declining demand)
-- Email alerts when occupation list changes
-- Chatbot to help find right occupation
-- Skills assessment cost calculator
-- Visa processing time estimates
+- AI chatbot for occupation recommendation
+- Email alerts for occupation list changes
+- Interactive visa pathway diagrams
 - Success rate statistics by occupation
-- Search by alternative title suggestion chips
-- "Similar occupations" based on specialisations
+- Skills assessment cost estimator
 
-### Business Features (NEW - Feb 12, 2026)
-- **RMA lead generation** (qualified leads with behavior data)
-- **Market intelligence reports** (quarterly migration trends)
-- **Partnership opportunities** (recruitment agencies, education providers)
-- **Subscription intelligence platform** ($99-299/month for trend data)
-- **Custom research services** ($1,000-5,000 per project)
+### Business Features (Analytics-Powered)
+- Market intelligence reports (quarterly trends)
+- Subscription platform ($99-299/month for RMAs/recruiters)
+- Custom research services ($1k-5k per project)
+- API access for partners
+- Whitelabel solution for agencies
 
 ### Community
-- Community forum for each occupation
-- Connect with migration agents
-- Success stories and testimonials
+- User success stories
+- Migration journey timelines
+- RMA directory/marketplace
+- Blog with migration tips
 
 ---
 
 ## 📝 Notes
 
-- **Design inspiration:** Anzscosearch (see `Anzscosearch_UI_UX_Analysis.md`)
-- **Target users:** People researching Australian migration options
-- **Competitive advantage:** Free, comprehensive, up-to-date, fast
-- **Data update frequency:** Quarterly (when ANZSCO or lists change)
-- **Alternative titles:** From official ABS ANZSCO 2022 Index (Feb 2026)
-- **NEW:** Analytics & lead generation system (Feb 12, 2026) - See full report in docs/
+- **Design inspiration:** Anzscosearch
+- **Target users:** People researching Australian migration
+- **Competitive advantage:** Free, comprehensive, up-to-date, analytics-powered
+- **Data update frequency:** Quarterly
+- **Analytics:** Phase 1 complete and collecting production data (Feb 14, 2026)
 
 ---
 
 ## 🎯 Next Session Goals
 
 **Immediate (This Week):**
-1. Review Analytics & RMA Lead Feature Report
-2. Decide on Phase 1 implementation timeline
-3. Set up basic analytics tracking (if approved)
-4. Begin RMA lead form development (if approved)
+1. ✅ Phase 1 Analytics deployed
+2. Monitor analytics for 3-7 days
+3. Analyze high-intent user patterns
+4. Review Phase 2 Implementation Plan
+5. Decide: Phase 2 now OR visa pages first
 
 **This Month:**
-5. Complete Phase 1 (Analytics + Lead System)
-6. Launch beta with 2-3 RMAs
-7. Monitor and optimize conversion rates
-8. Add visa information pages
+6. Complete Phase 2 OR visa detail pages
+7. Find 1-2 beta RMA partners (if Phase 2)
+8. Mobile optimization
+9. Add top 50 occupation descriptions
 
 **Next 3 Months:**
-9. Complete Phase 2 (Enhanced features)
-10. Scale RMA partnerships
-11. Generate first trend reports
-12. Explore additional revenue streams
+10. Scale RMA partnerships (if Phase 2 successful)
+11. Advanced analytics features
+12. Build remaining high-priority features
+13. First revenue milestone: $2,000+/month
 
 ---
 
-## 💰 Revenue Projections (NEW)
+## 💰 Revenue Projections (Phase 2)
 
-**Conservative (Year 1):**
-- 50 leads/month × $40 = $2,000/month
-- Annual: $24,000
-- Costs: $0-20/month
-- Net Profit: ~$23,700/year
+**Launch (Month 1-3):**
+- 10-50 leads/month × $100-200 = $1,000-10,000/month
+- Cost: $12/month
+- Net: $988-9,988/month
 
-**Moderate (Year 2):**
-- 150 leads/month × $50 = $7,500/month
-- Annual: $90,000
-- Costs: $20-50/month
-- Net Profit: ~$89,400/year
+**Year 1:**
+- 50-200 leads/month × $100-500 = $5,000-100,000/month
+- Cost: $12-50/month
+- Annual Net: ~$60,000-1,200,000
 
-**Optimistic (Year 3):**
-- 300 leads/month × $60 = $18,000/month
-- Annual: $216,000
-- Costs: $50-100/month
-- Net Profit: ~$214,800/year
+**Conservative Estimate (Year 1):**
+- 50 leads/month × $200 = $10,000/month
+- Annual: $120,000
+- Cost: $144/year
+- **Net Profit: ~$119,856/year**
 
 **Profit Margin:** 99%+ 🚀
+
+---
+
+## 📅 Project Timeline
+
+**Completed:**
+- Jan 2026: Basic occupation search tool
+- Feb 6: ANZSCO details (alt titles, specialisations)
+- Feb 11-12: Modern UI, config-driven visa logic
+- Feb 14: **Phase 1 Analytics deployed** ← YOU ARE HERE
+
+**Next:**
+- Feb 15-21: Analytics data collection OR visa pages
+- Feb 22-28: Phase 2 implementation (12-15 hours)
+- Mar 2026: Beta launch with RMAs, first revenue
+
+**Future:**
+- Q2 2026: Scale to 10+ RMA partners
+- Q3 2026: Advanced features, mobile optimization  
+- Q4 2026: $5,000-10,000/month revenue target
+
+---
+
+**Last Updated:** February 14, 2026 (Evening)  
+**Phase 1 Analytics:** ✅ COMPLETE & DEPLOYED  
+**Next Milestone:** Phase 2 Lead Generation OR Visa Detail Pages  
+**Status:** Production-ready analytics platform, monetization foundation established
