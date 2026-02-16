@@ -40,22 +40,76 @@
 - [x] TypeScript strict mode enabled
 - [x] **Config-driven VISA_LIST_RULES** for maintainability (Feb 12, 2026)
 
-### Analytics & Tracking ✨ (Feb 14, 2026 - DEPLOYED)
-- [x] **Phase 1 Analytics - COMPLETE & LIVE** 🎉
-  - [x] Database tables: `analytics_events`, `leads`, `lead_summaries`
-  - [x] Event tracking utility (`lib/analytics.ts`)
-  - [x] Session ID generation and tracking
-  - [x] User geolocation with session-based caching
-  - [x] **Search tracking** (`search_performed`)
-  - [x] **Occupation view tracking** (`occupation_viewed`)
-  - [x] **Tab switch tracking** (`tab_switched`)
-  - [x] **LIN click tracking** (`lin_clicked`) ⭐ High intent signal
-  - [x] **Info button tracking** (`info_button_clicked`) ⭐ Complex visa interest
-  - [x] **Related occupation tracking** (`related_occupation_clicked`)
-  - [x] Production deployment verified (25+ events captured)
-  - [x] Zero cost infrastructure ($0/month)
+### Phase 1: Analytics System ✅ COMPLETE (Feb 14, 2026)
+- [x] **Database Setup**
+  - [x] `analytics_events` table with indexes
+  - [x] `leads` table (ready for Phase 2)
+  - [x] `lead_summaries` table (ready for Phase 3)
 
-**Status:** ✅ ALL 6 EVENT TYPES LIVE IN PRODUCTION
+- [x] **Event Tracking Utility**
+  - [x] `lib/analytics.ts` - Core tracking function
+  - [x] Session ID generation
+  - [x] User geolocation with session caching
+  - [x] Graceful error handling
+
+- [x] **6 Event Types - ALL DEPLOYED**
+  - [x] `search_performed` - Search queries and results
+  - [x] `occupation_viewed` - Occupation page views
+  - [x] `tab_switched` - ANZSCO Details engagement
+  - [x] `lin_clicked` - Legal research (HIGH intent)
+  - [x] `info_button_clicked` - Complex visa interest
+  - [x] `related_occupation_clicked` - Career exploration
+
+- [x] **Production Verification**
+  - [x] 25+ events captured in first hours
+  - [x] Users from Malaysia, Japan
+  - [x] High-intent sessions detected
+  - [x] Zero cost infrastructure
+
+**Status:** ✅ LIVE - Collecting production data daily
+
+---
+
+### Phase 2: Lead Generation System ✅ COMPLETE (Feb 15, 2026)
+- [x] **LeadWidget Component**
+  - [x] Always-visible chat bubble (bottom-right)
+  - [x] Auto-expand after 2 minutes
+  - [x] "Yes, Let's Talk" → Opens form
+  - [x] "Maybe Later" → Minimizes to bubble
+  - [x] Smooth animations
+  - [x] Mobile responsive
+
+- [x] **LeadForm Component**
+  - [x] Contact info (name, email, phone)
+  - [x] Location (onshore/offshore)
+  - [x] Current visa (conditional on onshore)
+  - [x] Timeline (ASAP / 6-12mo / 1-2yr / researching)
+  - [x] Optional message field
+  - [x] Privacy policy consent
+  - [x] Real-time validation
+  - [x] Success screen with Calendly
+
+- [x] **Database Integration**
+  - [x] Save leads to Supabase
+  - [x] Extended leads table schema
+  - [x] Intent score calculation (5 base for form submission)
+  - [x] Session tracking integration
+  - [x] Production verified (test lead saved)
+
+- [x] **Privacy Compliance**
+  - [x] Privacy Policy page (`/privacy-policy`)
+  - [x] GDPR/CCPA compliant
+  - [x] Clear data usage explanation
+  - [x] User rights documented
+
+- [x] **Calendly Integration**
+  - [x] Instant booking link on success screen
+  - [x] Opens in new tab
+  - [x] ⚠️ URL is placeholder (needs update)
+
+**Status:** ✅ DEPLOYED - Ready for RMA partnerships after Calendly setup
+
+---
 
 ### Data
 - [x] 3,261 occupations imported (v1.3, v2022, OSCA)
@@ -70,219 +124,226 @@
 
 ## 🚧 In Progress
 
-**Nothing currently in progress** - Ready to start new features!
+**Nothing currently in progress** - Phase 2 deployed, ready for Phase 3!
 
 ---
 
 ## 📋 Backlog (Prioritized)
 
-### 🔥 HIGHEST PRIORITY - Phase 2: RMA Lead Generation
+### 🔥 HIGHEST PRIORITY - Pre-Launch Configuration
 
-**Status:** Ready to build (database & analytics foundation complete)  
-**Estimated Time:** 12-15 hours  
-**Monthly Cost:** $12 (Calendly)  
-**Revenue Potential:** $2,000-10,000/month  
-**Profit Margin:** 99%+
+**Before going live with RMA partnerships:**
 
-**Full Details:** See `docs/Phase_2_Implementation_Plan.md` and `docs/Analytics_RMA_Lead_Feature_Report.md`
-
-#### Core Features to Build:
-
-**1. Lead Capture Widget** (4-5 hours)
-- [ ] Option A: "Friendly Helper" bottom-right nudge
-- [ ] Context-aware messaging based on user behavior
-- [ ] Dismissible with "maybe later" option
-- [ ] Triggers on high-intent signals:
-  - [ ] LIN clicks (legal research)
-  - [ ] Info button clicks (complex visas)
-  - [ ] Multiple occupation views
-  - [ ] Extended session time (10+ minutes)
-
-**2. Lead Capture Form** (2-3 hours)
-- [ ] Minimal fields (name, email, phone, country)
-- [ ] Optional: Preferred contact method
-- [ ] Privacy consent checkbox
-- [ ] Calendly booking integration
-- [ ] Mobile-friendly design
-
-**3. Lead Dashboard** (3-4 hours)
-- [ ] RMA login (simple password auth with bcrypt)
-- [ ] View all leads with intent scores
-- [ ] Session summaries:
-  - [ ] Occupations viewed
-  - [ ] Visas researched  
-  - [ ] High-intent signals (LIN clicks, etc.)
-  - [ ] Recommended approach
-- [ ] Filter by status (new, contacted, converted)
-- [ ] Export to CSV
-
-**4. Session Summary Generation** (2-3 hours)
-- [ ] Automatic summary when lead submits
-- [ ] Query analytics_events by session_id
-- [ ] Calculate intent score (1-10):
-  - [ ] LIN clicks: +4 points
-  - [ ] Info clicks: +2 points
-  - [ ] Multiple occupations: +2 points
-  - [ ] 10+ min session: +3 points
-- [ ] Generate recommended approach for RMA
-- [ ] Highlight high-intent behaviors
-
-**5. Email Notifications** (1-2 hours) - OPTIONAL
-- [ ] Set up Resend.com (free tier: 3,000 emails/month)
-- [ ] Email template for new leads
-- [ ] Include session summary
-- [ ] Link to lead dashboard
-
-**6. Privacy Policy Page** (1-2 hours)
-- [ ] GDPR/CCPA compliant
-- [ ] Clear data usage explanation
-- [ ] Opt-out instructions
-- [ ] Contact for privacy inquiries
-
----
-
-### 💡 ALTERNATIVE PATH: Visa Detail Pages First
-
-**Rationale:** Build content while collecting more analytics data  
-**Timeline:** 8-12 hours (10-15 pages)  
-**Then:** Proceed to Phase 2 with richer insights
-
-**Benefits:**
-- ✅ More valuable content for users
-- ✅ SEO opportunity (rank for "482 visa", "189 visa", etc.)
-- ✅ More tracking points (visa page views)
-- ✅ Let analytics run 1-2 weeks before Phase 2
-
-**Tasks:**
-- [ ] **Create Visa Page Template** (2 hours)
-  - [ ] Clean, informative layout
-  - [ ] Reusable component structure
+- [ ] **Update Calendly URL** (5 minutes)
+  - [ ] Set up Calendly Standard account ($12/month)
+  - [ ] Create "Migration Consultation" event (30 min)
+  - [ ] Replace placeholder URL in `LeadForm.tsx`
+  - **Current:** `https://calendly.com/your-account/migration-consultation`
   
-- [ ] **Build Individual Pages** (30-45 min each):
-  - [ ] `/visa/189` - Skilled Independent
-  - [ ] `/visa/190` - Skilled Nominated  
-  - [ ] `/visa/491` - Skilled Work Regional
-  - [ ] `/visa/494` - Skilled Employer Sponsored Regional
-  - [ ] `/visa/482` - TSS / SID
-  - [ ] `/visa/186` - Employer Nomination
-  - [ ] `/visa/485` - Temporary Graduate
-  - [ ] Plus 5-10 more visa types
+- [ ] **Add Contact Email** (2 minutes)
+  - [ ] Update privacy policy with real contact email
+  - [ ] Currently shows placeholder
+  
+- [ ] **Test on Mobile** (30 minutes)
+  - [ ] Widget appearance and behavior
+  - [ ] Form usability on small screens
+  - [ ] Calendly link functionality
+  
+- [ ] **Clear Test Data** (2 minutes)
+  - [ ] Delete test lead from database
+  - [ ] Verify clean slate for production leads
 
-- [ ] **Content Per Page:**
-  - [ ] Overview and purpose
-  - [ ] Key requirements
-  - [ ] Processing times
-  - [ ] Costs and fees
-  - [ ] Pathway to permanent residence
-  - [ ] Top 10 eligible occupations (from database)
-  - [ ] Links to LIN and Home Affairs
-
-- [ ] **Add Tracking** (15 min per page):
-  - [ ] `visa_page_viewed` event
-  - [ ] Scroll depth tracking
-  - [ ] CTA clicks
+**Total Time:** 45 minutes  
+**Then:** Ready to launch! 🚀
 
 ---
 
-### 📊 DECISION POINT: What to Build Next?
+### 🎯 DECISION POINT: What's Next?
 
-**Option A: Phase 2 Lead Generation NOW** (12-15 hours)
-- ✅ Start generating revenue immediately
-- ✅ Test RMA partnership model
-- ✅ Validate lead quality with real data
-- ⚠️ Need to find 1-2 beta RMA partners first
+**Option A: Launch with Current Features** (Recommended)
+- Complete pre-launch checklist above
+- Find 1-2 beta RMA partners
+- Start generating leads immediately
+- Monitor and optimize based on real data
+- **Time:** 1 week to first revenue
 
-**Option B: Let Analytics Run 1 Week, Then Phase 2**
-- ✅ Collect more behavioral data (50-100+ events)
-- ✅ Validate intent scoring accuracy
-- ✅ Build with real user insights
-- ✅ Identify top occupations for visa pages
-- ⏳ Delays revenue by 1 week
+**Option B: Build RMA Dashboard First** (Phase 3a)
+- RMA login page (simple password auth)
+- Lead inbox (table view with filters)
+- Lead detail view (full session data)
+- Status management (New → Contacted → Converted)
+- Notes system
+- **Time:** 8-12 hours
+- **Benefit:** Professional system, easier to scale multiple RMAs
 
-**Option C: Visa Pages First, Then Phase 2** (20-27 hours total)
-- ✅ More valuable content
-- ✅ SEO benefits
-- ✅ Additional tracking data
-- ✅ Better insights for Phase 2
-- ⏳ Delays revenue by 2-3 weeks
+**Option C: Add Email Notifications First** (Phase 3b)
+- Resend.com integration (free tier)
+- Email RMA when high-intent lead arrives
+- Include session summary in email
+- **Time:** 2-3 hours
+- **Benefit:** RMAs don't need to check dashboard constantly
 
-**Current Recommendation:** **Option B** - Let analytics run 1 week, analyze data, then build Phase 2 with insights
+**Current Recommendation:** **Option A** - Launch now, build dashboard based on real feedback
 
 ---
 
-### High Priority (After Phase 2 or Visa Pages)
+### Phase 3a: RMA Dashboard (8-12 hours)
+
+**Core Features:**
+- [ ] **Login System** (2 hours)
+  - [ ] `/admin/login` page
+  - [ ] Simple password auth (bcrypt)
+  - [ ] Session management
+  - [ ] Logout functionality
+
+- [ ] **Lead Inbox** (3-4 hours)
+  - [ ] `/admin/leads` page
+  - [ ] Table view with columns:
+    - [ ] Created date
+    - [ ] Name
+    - [ ] Email
+    - [ ] Location
+    - [ ] Timeline
+    - [ ] Intent Score
+    - [ ] Status
+  - [ ] Filter by status (New/Contacted/Converted)
+  - [ ] Sort by date, intent score
+  - [ ] Search by name/email
+  - [ ] Click row to view details
+
+- [ ] **Lead Detail View** (2-3 hours)
+  - [ ] Full contact information
+  - [ ] Occupation researched
+  - [ ] Session analytics:
+    - [ ] Occupations viewed
+    - [ ] LINs clicked
+    - [ ] Info buttons clicked
+    - [ ] Time on site
+  - [ ] Intent score breakdown
+  - [ ] Timeline and current visa
+  - [ ] User message (if provided)
+  - [ ] Status dropdown (update status)
+  - [ ] Notes field (internal RMA notes)
+  - [ ] Save button
+
+- [ ] **Export Functionality** (1 hour)
+  - [ ] Export leads to CSV
+  - [ ] Filter before export
+  - [ ] Include all relevant fields
+
+**Optional Enhancements:**
+- [ ] Multi-RMA support (assign leads to specific RMAs)
+- [ ] Lead assignment rules (round-robin, by expertise)
+- [ ] Performance analytics (conversion rates)
+
+---
+
+### Phase 3b: Email Notifications (2-3 hours)
+
+- [ ] **Resend Integration**
+  - [ ] Sign up for Resend (free tier: 3,000 emails/month)
+  - [ ] Add API key to environment variables
+  - [ ] Install Resend SDK
+
+- [ ] **Email Template**
+  - [ ] New lead notification email
+  - [ ] Include:
+    - [ ] Contact details
+    - [ ] Occupation researched
+    - [ ] Intent score
+    - [ ] Session summary
+    - [ ] Link to dashboard
+  - [ ] Professional HTML design
+
+- [ ] **Trigger Logic**
+  - [ ] Send email when lead submits form
+  - [ ] Optional: Only send for high-intent leads (score 7+)
+  - [ ] Include error handling
+
+---
+
+### High Priority (After Launch)
 
 #### 1. Mobile Optimization (4-6 hours)
-- [ ] Mobile-friendly visa table
-  - [ ] Card layout for <768px screens
-  - [ ] Collapsible sections
-  - [ ] Touch-friendly buttons
-- [ ] Test on iPhone/Android
-- [ ] Fix legend spacing on mobile
+- [ ] Test widget on mobile thoroughly
+- [ ] Full-width drawer style for mobile
+- [ ] Touch-friendly form fields
+- [ ] Fix any layout issues
+- [ ] Test across iOS and Android
 
-**Current Status:** Desktop perfect, mobile needs work  
+**Current Status:** Widget works on mobile but not optimized  
 **Impact:** 30-40% of traffic is mobile
 
-#### 2. ANZSCO Details Enhancement (8-12 hours)
+#### 2. Session Summary Enhancement (3-4 hours)
+- [ ] Generate comprehensive session summary
+- [ ] Attach to lead in database
+- [ ] Query `analytics_events` by session_id
+- [ ] Calculate refined intent score from:
+  - [ ] Base form submission: 5 points
+  - [ ] LIN clicks: +4 each
+  - [ ] Info button clicks: +3 each
+  - [ ] Multiple occupations: +2
+  - [ ] Time on site: +1-3
+- [ ] Store in `lead_summaries` table
+- [ ] Display in dashboard
+
+**Benefit:** Much better lead qualification for RMAs
+
+#### 3. ANZSCO Details Enhancement (8-12 hours)
 - [x] Alternative titles ✅
 - [x] Specialisations ✅
 - [ ] Occupation descriptions (manual for top 50 based on analytics)
 - [ ] Tasks and duties (manual for top 50 based on analytics)
-- [ ] v1.3 vs v2022 comparison view (low priority)
 
-**Strategy:** Use analytics to identify top 50 most-viewed occupations, add descriptions for those first
+**Strategy:** Use analytics to identify top 50 most-viewed, add descriptions for those
 
-#### 3. Autocomplete Dropdown (1-2 hours)
+#### 4. Autocomplete Dropdown (1-2 hours)
 - [ ] Show suggestions as user types
-- [ ] Include alternative titles in search
-- [ ] Keyboard navigation support
+- [ ] Include alternative titles
+- [ ] Keyboard navigation
 - [ ] Limit to 5-10 suggestions
-
-**Impact:** Major UX improvement
-
-#### 4. Last Updated Date (30 minutes)
-- [ ] Display in header: "Last Updated: [date]"
-- [ ] Pull from database or config
-
-**Impact:** Trust and transparency
 
 ---
 
 ### Medium Priority (Future)
 
 #### 5. Analytics-Powered Features
-*Require 1-2 weeks of data collection first*
+*Require 2-4 weeks of data first*
 
 - [ ] **"People Also Researched"** (4-6 hours)
-  - [ ] Query analytics for common occupation pairs
-  - [ ] Display on occupation detail page
-  - [ ] Geographic variants ("Users from India also viewed...")
+  - [ ] Query common occupation pairs from analytics
+  - [ ] Display on detail page
+  - [ ] Geographic variants
 
 - [ ] **Similar Occupations** (6-8 hours)
   - [ ] Show alternatives with same visa eligibility
-  - [ ] "Want easier pathway?" suggestions
+  - [ ] Based on user behavior patterns
 
 - [ ] **Visa Comparison Tool** (1-2 days)
   - [ ] Side-by-side comparison
-  - [ ] Recommend best option
+  - [ ] Recommend best option based on user profile
 
-#### 6. Standard Features
+#### 6. Visa Detail Pages (8-12 hours)
+- [ ] Create template for visa pages
+- [ ] Build 10-15 individual pages:
+  - [ ] `/visa/189` - Skilled Independent
+  - [ ] `/visa/190` - Skilled Nominated
+  - [ ] `/visa/491` - Skilled Work Regional
+  - [ ] `/visa/482` - TSS/SID
+  - [ ] `/visa/186` - ENS
+  - [ ] Plus 5-10 more
+- [ ] Content: Requirements, processing times, pathways
+- [ ] Top 10 eligible occupations per visa
+- [ ] Add tracking to each page
 
-- [ ] **Search by Alternative Titles** (1 hour)
-  - [ ] Update search query
-  - [ ] Show indicator when found via alt title
+**Benefit:** SEO, user value, more tracking data
 
-- [ ] **Assessing Authority Display** (1 hour)
-  - [ ] Show TRA, ACS, VETASSESS, etc.
-  - [ ] Link to authority website
-
-- [ ] **State/Territory Tab** (4-6 hours)
-  - [ ] Import state nomination data
-  - [ ] Display state-specific requirements
-
-- [ ] **Catalogue Filter Buttons** (1-2 hours)
-  - [ ] [v1.2/v1.3/v2022] [v2022] [OSCA]
-  - [ ] Match Anzscosearch UX
+#### 7. Standard Features
+- [ ] Search by alternative titles (1 hour)
+- [ ] Assessing authority display (1 hour)
+- [ ] State/Territory tab (4-6 hours with data import)
+- [ ] Catalogue filter buttons (1-2 hours)
+- [ ] Last updated date (30 minutes)
 
 ---
 
@@ -299,86 +360,106 @@
 
 ## 🐛 Known Issues
 
-### Minor Issues
-- [ ] Search bar doesn't auto-focus on page load
-- [ ] No "Loading" state when switching between occupation versions
-- [ ] Legend takes up too much space on mobile
+### Critical (Fix Before Launch):
+- [ ] Calendly URL is placeholder
+- [ ] Contact email in privacy policy is placeholder
 
-### Technical Debt
-- [ ] Duplicate code in CheckIcon, XIcon, DashIcon components
-- [ ] src/lib/supabase.ts is duplicate of lib/supabase.ts
-- [ ] Hard-coded LIN URLs (should come from database)
-- [ ] ANZSCO Details section could be extracted into component
+### Minor:
+- [ ] Widget not fully optimized for mobile
+- [ ] No email notifications (RMAs won't know about leads)
+- [ ] Search bar doesn't auto-focus
+- [ ] Legend takes up space on mobile
+
+### Technical Debt:
+- [ ] Duplicate icon components (CheckIcon, XIcon, DashIcon)
+- [ ] Duplicate supabase.ts files
+- [ ] Hard-coded LIN URLs
+- [ ] ANZSCO Details could be separate component
 
 ---
 
 ## 📊 Metrics to Track
 
-### Analytics Metrics (Currently Tracking ✅)
+### Analytics Metrics (Phase 1 - Currently Tracking ✅)
 - [x] Search queries and results
 - [x] Occupation views by code and country
-- [x] Visa interest (LIN clicks, info buttons)
+- [x] Visa research (LIN clicks, info buttons)
 - [x] Tab engagement
-- [x] Career exploration (related occupations)
+- [x] Career exploration
 - [x] Session duration and journeys
 - [x] Geographic distribution
 
-### Lead Generation Metrics (Phase 2)
-- [ ] Lead form submissions per week/month
-- [ ] Consent opt-in rate (target: 70-80%)
-- [ ] Average intent score (target: 7+/10)
-- [ ] RMA conversion rate (target: 40-60%)
-- [ ] Revenue per lead (target: $100-500)
+### Lead Generation Metrics (Phase 2 - Starting Soon)
+- [ ] Widget auto-expand rate (after 2 min timer)
+- [ ] Form open rate (clicks on "Yes, Let's Talk")
+- [ ] Form completion rate (submitted / opened)
+- [ ] Calendly booking rate
+- [ ] Average intent score
+- [ ] Location distribution (onshore vs offshore)
+- [ ] Timeline distribution
+- [ ] Leads per week/month
+- [ ] Revenue per lead
 - [ ] Total monthly revenue
 
-### Performance Metrics
-- [ ] Page load time (<2 seconds)
-- [ ] Search response time (<500ms)
-- [ ] Analytics event reliability
-- [ ] Mobile usability score
+### RMA Metrics (Phase 3 - Future)
+- [ ] Lead response time (how fast RMAs contact leads)
+- [ ] Conversion rate (lead → consultation → client)
+- [ ] Revenue per RMA
+- [ ] Lead satisfaction scores
 
 ---
 
 ## 🚀 Deployment Checklist
 
 ### Pre-Deployment
-- [x] Test locally
-- [x] TypeScript build succeeds
-- [x] All features tested
-- [x] Analytics tracking verified ✅
-- [x] Environment variables configured
+- [x] Test locally ✅
+- [x] TypeScript build succeeds ✅
+- [x] Phase 1 analytics tested ✅
+- [x] Phase 2 lead form tested ✅
+- [x] Database integration tested ✅
+- [x] Widget behavior verified ✅
+- [ ] Mobile testing (in progress)
+- [ ] Calendly URL updated
+- [ ] Contact email updated
 
 ### Post-Deployment
-- [x] Live site verified ✅
-- [x] Search working ✅
-- [x] Detail pages working ✅
+- [x] Live site working ✅
 - [x] Analytics collecting data ✅
-- [ ] Test on mobile (needs optimization)
-- [ ] Share with test users
+- [x] Widget visible on occupation pages ✅
+- [x] Lead form functional ✅
+- [x] Database saving leads ✅
+- [ ] Test on multiple mobile devices
+- [ ] Verify Calendly booking works
+- [ ] Share with beta RMAs
 
 ---
 
 ## 💡 Feature Ideas (Brainstorm)
 
 ### User Experience
+- Visa eligibility quiz (5 questions → recommended pathway)
 - AI chatbot for occupation recommendation
 - Email alerts for occupation list changes
 - Interactive visa pathway diagrams
-- Success rate statistics by occupation
+- Success stories and testimonials
 - Skills assessment cost estimator
+- Processing time tracker
 
 ### Business Features (Analytics-Powered)
-- Market intelligence reports (quarterly trends)
-- Subscription platform ($99-299/month for RMAs/recruiters)
+- Market intelligence reports (quarterly trends, $500-2k each)
+- Subscription platform for RMAs/recruiters ($99-299/month)
 - Custom research services ($1k-5k per project)
 - API access for partners
 - Whitelabel solution for agencies
+- Affiliate program for education agents
 
 ### Community
 - User success stories
 - Migration journey timelines
-- RMA directory/marketplace
+- RMA marketplace/directory
 - Blog with migration tips
+- Newsletter with policy updates
+- Forum for specific occupations
 
 ---
 
@@ -386,9 +467,11 @@
 
 - **Design inspiration:** Anzscosearch
 - **Target users:** People researching Australian migration
-- **Competitive advantage:** Free, comprehensive, up-to-date, analytics-powered
+- **Competitive advantage:** Free, comprehensive, analytics-powered, instant RMA connection
 - **Data update frequency:** Quarterly
-- **Analytics:** Phase 1 complete and collecting production data (Feb 14, 2026)
+- **Phase 1:** Analytics deployed Feb 14, 2026
+- **Phase 2:** Lead generation deployed Feb 15, 2026
+- **Phase 3:** TBD (Dashboard OR Launch)
 
 ---
 
@@ -396,42 +479,50 @@
 
 **Immediate (This Week):**
 1. ✅ Phase 1 Analytics deployed
-2. Monitor analytics for 3-7 days
-3. Analyze high-intent user patterns
-4. Review Phase 2 Implementation Plan
-5. Decide: Phase 2 now OR visa pages first
+2. ✅ Phase 2 Lead generation deployed
+3. Complete pre-launch checklist (45 min)
+4. Find 1-2 beta RMA partners
+5. Launch and monitor first leads
 
 **This Month:**
-6. Complete Phase 2 OR visa detail pages
-7. Find 1-2 beta RMA partners (if Phase 2)
-8. Mobile optimization
-9. Add top 50 occupation descriptions
+6. Build RMA dashboard OR email notifications
+7. Mobile optimization
+8. Enhanced session summaries
+9. First revenue: $500-2,000
 
 **Next 3 Months:**
-10. Scale RMA partnerships (if Phase 2 successful)
-11. Advanced analytics features
-12. Build remaining high-priority features
-13. First revenue milestone: $2,000+/month
+10. Scale to 10+ RMA partners
+11. Add visa detail pages
+12. Build analytics-powered features
+13. Target: $5,000-10,000/month revenue
 
 ---
 
-## 💰 Revenue Projections (Phase 2)
+## 💰 Revenue Projections
 
-**Launch (Month 1-3):**
-- 10-50 leads/month × $100-200 = $1,000-10,000/month
+**Phase 2 Active (Current):**
+
+**Month 1 (Launch):**
+- 10-20 leads × $100-200 = $1,000-4,000
+- Cost: $12/month (Calendly)
+- Net: $988-3,988
+
+**Month 3:**
+- 30-50 leads × $150-300 = $4,500-15,000
 - Cost: $12/month
-- Net: $988-9,988/month
+- Net: $4,488-14,988
 
-**Year 1:**
-- 50-200 leads/month × $100-500 = $5,000-100,000/month
+**Month 6:**
+- 50-100 leads × $200-500 = $10,000-50,000
 - Cost: $12-50/month
-- Annual Net: ~$60,000-1,200,000
+- Net: $9,950-49,950
 
-**Conservative Estimate (Year 1):**
-- 50 leads/month × $200 = $10,000/month
-- Annual: $120,000
-- Cost: $144/year
-- **Net Profit: ~$119,856/year**
+**Year 1 Total:**
+- Conservative: 500 leads × $150 = $75,000
+- Moderate: 1,000 leads × $250 = $250,000
+- Optimistic: 2,000 leads × $300 = $600,000
+- Cost: ~$200/year
+- **Net Profit: $74,800 - $599,800**
 
 **Profit Margin:** 99%+ 🚀
 
@@ -443,21 +534,24 @@
 - Jan 2026: Basic occupation search tool
 - Feb 6: ANZSCO details (alt titles, specialisations)
 - Feb 11-12: Modern UI, config-driven visa logic
-- Feb 14: **Phase 1 Analytics deployed** ← YOU ARE HERE
+- Feb 14: **Phase 1 Analytics deployed**
+- Feb 15: **Phase 2 Lead generation deployed** ← YOU ARE HERE
 
 **Next:**
-- Feb 15-21: Analytics data collection OR visa pages
-- Feb 22-28: Phase 2 implementation (12-15 hours)
-- Mar 2026: Beta launch with RMAs, first revenue
+- Feb 16-17: Pre-launch setup, find RMAs
+- Feb 18+: **LAUNCH** - Start generating leads
+- Mar 2026: Build dashboard, scale RMAs
+- Apr-Jun: Advanced features, mobile optimization
 
 **Future:**
-- Q2 2026: Scale to 10+ RMA partners
-- Q3 2026: Advanced features, mobile optimization  
-- Q4 2026: $5,000-10,000/month revenue target
+- Q2 2026: 10+ RMA partners, $10k/month revenue
+- Q3 2026: Advanced features, visa pages
+- Q4 2026: Scale to $20k+/month
 
 ---
 
-**Last Updated:** February 14, 2026 (Evening)  
-**Phase 1 Analytics:** ✅ COMPLETE & DEPLOYED  
-**Next Milestone:** Phase 2 Lead Generation OR Visa Detail Pages  
-**Status:** Production-ready analytics platform, monetization foundation established
+**Last Updated:** February 15, 2026 (Evening)  
+**Phase 1 Analytics:** ✅ DEPLOYED (Feb 14)  
+**Phase 2 Lead Generation:** ✅ DEPLOYED (Feb 15)  
+**Next Milestone:** Launch with RMA partners OR Build dashboard  
+**Status:** Production-ready revenue-generating platform 🎉
