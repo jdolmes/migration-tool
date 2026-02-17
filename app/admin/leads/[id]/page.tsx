@@ -30,6 +30,9 @@ import {
   getEventDetail,
   summariseJourney,
   getOccupationNames,
+  calculateIntentScore,
+  getIntentLabelFromScore,
+  getIntentColorFromScore,
   type Lead,
   type LeadStatus,
   type Comment,
@@ -110,6 +113,7 @@ export default function LeadDetailPage() {
   const [journey, setJourney] = useState<AnalyticsEvent[]>([])
   const [isLoadingJourney, setIsLoadingJourney] = useState(true)
   const [summary, setSummary] = useState<JourneySummary | null>(null)
+  const [realIntentScore, setRealIntentScore] = useState<number | null>(null)
   const [occupationNames, setOccupationNames] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -155,6 +159,13 @@ export default function LeadDetailPage() {
       // Build summary
       const journeySummary = summariseJourney(events, lead.created_at)
       setSummary(journeySummary)
+
+      const realScore = calculateIntentScore(events, {
+        timeline: lead.timeline,
+        location: lead.location,
+        created_at: lead.created_at,
+      })
+      setRealIntentScore(realScore)
 
       // Get occupation names for all unique codes in journey
       const codes = [
@@ -236,10 +247,10 @@ export default function LeadDetailPage() {
           </p>
         </div>
         <span
-          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getIntentColor(lead.intent_score)}`}
+          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getIntentColorFromScore(realIntentScore ?? lead.intent_score ?? 3)}`}
         >
-          {getIntentLabel(lead.intent_score)} Intent
-          {lead.intent_score ? ` (${lead.intent_score}/10)` : ''}
+          {getIntentLabelFromScore(realIntentScore ?? lead.intent_score ?? 3)} Intent
+          {` (${realIntentScore ?? lead.intent_score ?? 3})`}
         </span>
       </div>
 
@@ -374,6 +385,21 @@ export default function LeadDetailPage() {
                     <p className={`text-xs mt-0.5 ${summary.linClicks > 0 ? 'text-purple-600' : 'text-gray-600'}`}>
                       LIN Click{summary.linClicks !== 1 ? 's' : ''}
                     </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between bg-indigo-50 rounded-lg px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🎯</span>
+                    <span className="text-sm font-medium text-gray-700">Intent Score</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getIntentColorFromScore(realIntentScore ?? lead.intent_score ?? 3)}`}>
+                      {getIntentLabelFromScore(realIntentScore ?? lead.intent_score ?? 3)}
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {realIntentScore ?? lead.intent_score ?? 3} pts
+                    </span>
                   </div>
                 </div>
 

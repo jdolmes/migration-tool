@@ -8,8 +8,10 @@ import {
   formatDate,
   formatTimeline,
   formatLocation,
-  getIntentLabel,
-  getIntentColor,
+  getLeadJourney,
+  calculateIntentScore,
+  getIntentLabelFromScore,
+  getIntentColorFromScore,
   type Lead,
 } from '@/lib/admin'
 
@@ -48,6 +50,7 @@ export default function AdminLeadsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [recalculatedScores, setRecalculatedScores] = useState<Record<string, number>>({})
 
   const fetchLeads = async (showRefresh = false) => {
     if (showRefresh) setIsRefreshing(true)
@@ -62,6 +65,31 @@ export default function AdminLeadsPage() {
   useEffect(() => {
     fetchLeads()
   }, [])
+
+  useEffect(() => {
+    const recalculateScores = async () => {
+      const scores: Record<string, number> = {}
+
+      await Promise.all(
+        leads.map(async (lead) => {
+          if (!lead.session_id) {
+            scores[lead.id] = lead.intent_score || 3
+            return
+          }
+          const events = await getLeadJourney(lead.session_id)
+          scores[lead.id] = calculateIntentScore(events, {
+            timeline: lead.timeline,
+            location: lead.location,
+            created_at: lead.created_at,
+          })
+        })
+      )
+
+      setRecalculatedScores(scores)
+    }
+
+    if (leads.length > 0) recalculateScores()
+  }, [leads])
 
   // Filter by tab and search
   useEffect(() => {
@@ -246,10 +274,10 @@ export default function AdminLeadsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getIntentColor(lead.intent_score)}`}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getIntentColorFromScore(recalculatedScores[lead.id] ?? lead.intent_score ?? 3)}`}
                     >
-                      {getIntentLabel(lead.intent_score)}
-                      {lead.intent_score ? ` (${lead.intent_score})` : ''}
+                      {getIntentLabelFromScore(recalculatedScores[lead.id] ?? lead.intent_score ?? 3)}
+                      {` (${recalculatedScores[lead.id] ?? lead.intent_score ?? 3})`}
                     </span>
                   </td>
                   {activeTab === 'all' && (

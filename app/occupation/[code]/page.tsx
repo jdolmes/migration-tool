@@ -125,9 +125,31 @@ export default function OccupationDetailPage() {
       // Get session ID from analytics
       const sessionId = sessionStorage.getItem('session_id') || 'unknown'
 
-      // Calculate intent score from session events
-      // (Simple version for now - form submissions indicate high intent)
-      const intentScore = 5
+      // Calculate real intent score from session analytics events
+      const sessionId = sessionStorage.getItem('session_id')
+      let intentScore = 3 // base score
+
+      if (sessionId) {
+        try {
+          const { data: sessionEvents } = await supabase
+            .from('analytics_events')
+            .select('*')
+            .eq('session_id', sessionId)
+            .order('created_at', { ascending: true })
+
+          if (sessionEvents && sessionEvents.length > 0) {
+            const { calculateIntentScore } = await import('@/lib/admin')
+            intentScore = calculateIntentScore(sessionEvents, {
+              timeline: formData.timeline,
+              location: formData.location,
+              created_at: new Date().toISOString(),
+            })
+          }
+        } catch (err) {
+          console.error('Intent score calculation error:', err)
+          intentScore = 3 // fallback to base score
+        }
+      }
 
       // Prepare lead data for database
       const leadData = {

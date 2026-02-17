@@ -288,6 +288,77 @@ export function summariseJourney(
   }
 }
 
+export function calculateIntentScore(
+  events: AnalyticsEvent[],
+  formData: {
+    timeline: string | null
+    location: string | null
+    created_at: string
+  }
+): number {
+  let score = 0
+
+  // Base score for submitting the form
+  score += 3
+
+  // LIN clicks (+2 each)
+  const linClicks = events.filter(e => e.event_type === 'lin_clicked')
+  score += linClicks.length * 2
+
+  // Related occupation exploration (+2 each unique)
+  const relatedClicks = events.filter(e => e.event_type === 'related_occupation_clicked')
+  const uniqueRelated = new Set(relatedClicks.map(e => e.occupation_code).filter(Boolean))
+  score += uniqueRelated.size * 2
+
+  // Viewed ANZSCO Details tab (+2, once only)
+  const viewedAnzscoDetails = events.some(
+    e => e.event_type === 'tab_switched' && e.metadata?.to === 'anzsco-details'
+  )
+  if (viewedAnzscoDetails) score += 2
+
+  // Unique occupations viewed
+  const occupationViews = events.filter(e => e.event_type === 'occupation_viewed')
+  const uniqueOccupations = new Set(
+    occupationViews.map(e => e.occupation_code).filter(Boolean)
+  )
+  if (uniqueOccupations.size >= 3) score += 2
+  else if (uniqueOccupations.size === 2) score += 1
+
+  // Research duration
+  if (events.length > 0) {
+    const firstEvent = new Date(events[0].created_at)
+    const submission = new Date(formData.created_at)
+    const minutes = (submission.getTime() - firstEvent.getTime()) / 60000
+
+    if (minutes >= 15) score += 4
+    else if (minutes >= 10) score += 2
+    else if (minutes >= 3) score += 1
+  }
+
+  // Timeline
+  if (formData.timeline === 'asap') score += 2
+  else if (formData.timeline === '6-12mo' || formData.timeline === '6-12months') score += 1
+
+  // Location onshore
+  if (formData.location === 'onshore') score += 1
+
+  return score
+}
+
+export function getIntentLabelFromScore(score: number): string {
+  if (score >= 15) return 'Very High'
+  if (score >= 10) return 'High'
+  if (score >= 5) return 'Medium'
+  return 'Low'
+}
+
+export function getIntentColorFromScore(score: number): string {
+  if (score >= 15) return 'bg-purple-100 text-purple-700'
+  if (score >= 10) return 'bg-green-100 text-green-700'
+  if (score >= 5) return 'bg-yellow-100 text-yellow-700'
+  return 'bg-gray-100 text-gray-600'
+}
+
 export async function getOccupationNames(
   codes: string[]
 ): Promise<Record<string, string>> {
