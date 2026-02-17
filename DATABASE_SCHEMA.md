@@ -217,3 +217,45 @@ WHERE anzsco_code = '261313'
 - v1.3 and OSCA occupations have these fields as NULL
 - Data is stored as PostgreSQL text[] arrays for efficient querying
 - Link to full ANZSCO descriptions provided via ABS website
+
+---
+
+## Phase 3 Updates (February 17, 2026)
+
+### leads table - New Columns Added
+- `comments` (JSONB, default '[]') - Array of timestamped RMA comments
+  - Structure: [{ id: string, text: string, timestamp: string }]
+  - Added via: ALTER TABLE leads ADD COLUMN IF NOT EXISTS comments JSONB DEFAULT '[]'::jsonb
+
+### analytics_events table - Used for Intent Scoring
+The analytics_events table is now actively used to calculate real intent scores.
+Key fields used:
+- `session_id` - Links analytics events to leads
+- `event_type` - Used to identify high-intent signals
+- `metadata` - Used to detect ANZSCO Details tab views (metadata.to === 'anzsco-details')
+- `occupation_code` - Used to count unique occupations explored
+- `visa_subclass` - Used to identify visa interests
+
+### Intent Score Calculation
+Scores are calculated dynamically from session analytics events:
+
+| Signal | Points |
+|---|---|
+| Form submitted (base) | +3 |
+| LIN click (per click) | +2 |
+| Related occupation explored (per unique) | +2 |
+| Viewed ANZSCO Details tab | +2 |
+| 3+ unique occupations viewed | +2 |
+| 2 unique occupations viewed | +1 |
+| Research time 15+ minutes | +4 |
+| Research time 10-15 minutes | +2 |
+| Research time 3-10 minutes | +1 |
+| Timeline ASAP | +2 |
+| Timeline 6-12 months | +1 |
+| Location onshore | +1 |
+
+Score thresholds:
+- 15+ = Very High (purple)
+- 10-14 = High (green)
+- 5-9 = Medium (yellow)
+- 1-4 = Low (gray)

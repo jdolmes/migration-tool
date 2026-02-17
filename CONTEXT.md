@@ -464,6 +464,55 @@ git push
 
 ---
 
-Last Updated: February 15, 2026 (Evening)  
-Status: Phase 1 & 2 COMPLETE ✅ | Phase 3 READY TO BUILD 🚀  
+Last Updated: February 15, 2026 (Evening)
+Status: Phase 1 & 2 COMPLETE ✅ | Phase 3 READY TO BUILD 🚀
 Next: Start RMA Dashboard implementation in new sub-chat
+
+---
+
+## Phase 3: RMA Dashboard (February 17, 2026) ✅ COMPLETE
+
+### Session 1: Authentication ✅
+- Login page at /admin/login
+- Middleware route protection (middleware.ts in root)
+- HTTP-only session cookies (24hr duration)
+- Admin layout with navigation and logout
+- Password stored in ADMIN_PASSWORD env variable
+
+### Session 2: Lead Inbox + Detail ✅
+- Lead inbox at /admin/leads with status tabs (All/New/Contacted/Converted)
+- Search by name, email, occupation code
+- Lead detail page at /admin/leads/[id]
+- Timestamped comments system (saved to leads.comments JSONB)
+- Status management (New/Contacted/Converted)
+- Quick actions (email, call)
+
+### Session 2 Extended: Analytics Integration ✅
+- Research Journey timeline (full event history from analytics_events)
+- Research Summary card (stats, duration, visa interests, occupation names)
+- Country detection from analytics data
+- Occupation names alongside ANZSCO codes (looked up from occupations table)
+- Real intent scoring (replaces hardcoded score of 5)
+
+### New Files Added (Phase 3):
+- middleware.ts (root) - Route protection
+- app/admin/login/page.tsx - Login form
+- app/admin/layout.tsx - Admin navigation
+- app/admin/leads/page.tsx - Lead inbox
+- app/admin/leads/[id]/page.tsx - Lead detail
+- app/api/admin/login/route.ts - Login endpoint
+- app/api/admin/logout/route.ts - Logout endpoint
+- lib/admin.ts - Shared queries and helpers
+
+### New Environment Variables:
+- ADMIN_PASSWORD - Admin dashboard password (in .env.local and Vercel)
+
+### Key Patterns (Phase 3):
+- Session linking: leads.session_id === analytics_events.session_id
+- Intent scores calculated at form submission AND recalculated on dashboard load
+- Comments stored as JSONB array in leads.comments
+- Country pulled from analytics_events.user_country (not stored in leads)
+
+---
+Last Updated: February 17, 2026
+Status: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ | Next: Calendly integration + launch
