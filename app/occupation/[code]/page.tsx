@@ -126,15 +126,15 @@ export default function OccupationDetailPage() {
       const sessionId = sessionStorage.getItem('session_id') || 'unknown'
 
       // Calculate real intent score from session analytics events
-      const sessionId = sessionStorage.getItem('session_id')
+      const intentSessionId = sessionStorage.getItem('session_id')
       let intentScore = 3 // base score
 
-      if (sessionId) {
+      if (intentSessionId) {
         try {
           const { data: sessionEvents } = await supabase
             .from('analytics_events')
             .select('*')
-            .eq('session_id', sessionId)
+            .eq('session_id', intentSessionId)
             .order('created_at', { ascending: true })
 
           if (sessionEvents && sessionEvents.length > 0) {
