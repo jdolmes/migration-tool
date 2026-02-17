@@ -23,9 +23,18 @@ import {
   getIntentColor,
   updateLeadStatus,
   addComment,
+  getLeadJourney,
+  getEventLabel,
+  getEventIcon,
+  getEventColor,
+  getEventDetail,
+  summariseJourney,
+  getOccupationNames,
   type Lead,
   type LeadStatus,
   type Comment,
+  type AnalyticsEvent,
+  type JourneySummary,
 } from '@/lib/admin'
 
 const STATUS_OPTIONS: { label: string; value: LeadStatus; color: string; selected: string }[] = [
@@ -98,6 +107,10 @@ export default function LeadDetailPage() {
   const [isAddingComment, setIsAddingComment] = useState(false)
   const [isSavingStatus, setIsSavingStatus] = useState(false)
   const [statusSaved, setStatusSaved] = useState(false)
+  const [journey, setJourney] = useState<AnalyticsEvent[]>([])
+  const [isLoadingJourney, setIsLoadingJourney] = useState(true)
+  const [summary, setSummary] = useState<JourneySummary | null>(null)
+  const [occupationNames, setOccupationNames] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -128,6 +141,37 @@ export default function LeadDetailPage() {
       commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [comments])
+
+  useEffect(() => {
+    const fetchJourney = async () => {
+      if (!lead?.session_id) {
+        setIsLoadingJourney(false)
+        return
+      }
+
+      const events = await getLeadJourney(lead.session_id)
+      setJourney(events)
+
+      // Build summary
+      const journeySummary = summariseJourney(events, lead.created_at)
+      setSummary(journeySummary)
+
+      // Get occupation names for all unique codes in journey
+      const codes = [
+        ...new Set(
+          events
+            .map(e => e.occupation_code)
+            .filter(Boolean) as string[]
+        )
+      ]
+      if (lead.occupation_code) codes.push(lead.occupation_code)
+      const names = await getOccupationNames([...new Set(codes)])
+      setOccupationNames(names)
+
+      setIsLoadingJourney(false)
+    }
+    fetchJourney()
+  }, [lead])
 
   const handleSaveStatus = async () => {
     if (!lead) return
@@ -211,12 +255,21 @@ export default function LeadDetailPage() {
             <InfoRow icon={Mail} label="Email" value={lead.email} />
             <InfoRow icon={Phone} label="Phone" value={lead.phone || 'Not provided'} />
             <InfoRow icon={MapPin} label="Location" value={formatLocation(lead.location)} />
+            <InfoRow
+              icon={MapPin}
+              label="Country"
+              value={summary?.country ? `🌏 ${summary.country}` : 'Unknown'}
+            />
             <InfoRow icon={Briefcase} label="Current Visa" value={lead.current_visa || 'Not specified'} />
             <InfoRow icon={Clock} label="Timeline" value={formatTimeline(lead.timeline)} />
             <InfoRow
               icon={Briefcase}
               label="Occupation Researched"
-              value={lead.occupation_code ? `ANZSCO ${lead.occupation_code}` : 'Not specified'}
+              value={
+                lead.occupation_code
+                  ? `ANZSCO ${lead.occupation_code}${occupationNames[lead.occupation_code] ? ` — ${occupationNames[lead.occupation_code]}` : ''}`
+                  : 'Not specified'
+              }
             />
           </div>
 
@@ -283,6 +336,194 @@ export default function LeadDetailPage() {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* Research Summary */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">
+              📊 Research Summary
+            </h2>
+
+            {!summary ? (
+              <p className="text-sm text-gray-400 text-center py-4">No data available</p>
+            ) : (
+              <div className="space-y-4">
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-blue-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-semibold text-blue-700">
+                      {summary.uniqueOccupations}
+                    </p>
+                    <p className="text-xs text-blue-600 mt-0.5">
+                      Occupation{summary.uniqueOccupations !== 1 ? 's' : ''} Explored
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-semibold text-gray-700">
+                      {summary.searchesPerformed}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Search{summary.searchesPerformed !== 1 ? 'es' : ''} Performed
+                    </p>
+                  </div>
+                  <div className={`rounded-lg p-3 text-center ${summary.linClicks > 0 ? 'bg-purple-50' : 'bg-gray-50'}`}>
+                    <p className={`text-2xl font-semibold ${summary.linClicks > 0 ? 'text-purple-700' : 'text-gray-700'}`}>
+                      {summary.linClicks}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${summary.linClicks > 0 ? 'text-purple-600' : 'text-gray-600'}`}>
+                      LIN Click{summary.linClicks !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Research Duration */}
+                <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🕐</span>
+                    <span className="text-sm font-medium text-gray-700">Total Research Time</span>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {summary.researchDuration}
+                  </span>
+                </div>
+
+                {/* Visa Interests */}
+                {summary.topVisaInterests.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-2">Visa subclasses researched:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {summary.topVisaInterests.map(visa => (
+                        <span
+                          key={visa}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700"
+                        >
+                          Visa {visa}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Occupations Explored */}
+                {summary.uniqueOccupations > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-2">Occupations explored:</p>
+                    <div className="space-y-1">
+                      {[...new Set(
+                        journey
+                          .filter(e => e.event_type === 'occupation_viewed' && e.occupation_code)
+                          .map(e => e.occupation_code as string)
+                      )].map(code => (
+                        <div key={code} className="flex items-center gap-2 text-xs">
+                          <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                            {code}
+                          </span>
+                          <span className="text-gray-700">
+                            {occupationNames[code] || 'Loading...'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+          </div>
+
+          {/* Research Journey */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-1 flex items-center gap-2">
+              🗺️ Research Journey
+              {journey.length > 0 && (
+                <span className="ml-1 bg-indigo-100 text-indigo-700 text-xs rounded-full px-2 py-0.5">
+                  {journey.length} events
+                </span>
+              )}
+            </h2>
+            <p className="text-xs text-gray-500 mb-4">
+              Everything this person did before submitting their enquiry
+            </p>
+
+            {isLoadingJourney ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />
+                <p className="ml-2 text-sm text-gray-500">Loading journey...</p>
+              </div>
+            ) : journey.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-400">
+                  {lead.session_id
+                    ? 'No tracked activity found for this session'
+                    : 'No session data available for this lead'}
+                </p>
+              </div>
+            ) : (
+              <div className="relative">
+                {/* Timeline line */}
+                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+
+                <div className="space-y-3">
+                  {journey.map((event, index) => (
+                    <div key={event.id} className="relative flex gap-4 pl-2">
+                      {/* Timeline dot */}
+                      <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                        <div className={`w-2 h-2 rounded-full ${
+                          event.event_type === 'lin_clicked'
+                            ? 'bg-purple-500'
+                            : event.event_type === 'occupation_viewed'
+                              ? 'bg-blue-500'
+                              : event.event_type === 'info_button_clicked'
+                                ? 'bg-yellow-500'
+                                : 'bg-gray-400'
+                        }`} />
+                      </div>
+
+                      {/* Event Card */}
+                      <div className={`flex-1 rounded-lg border px-3 py-2 mb-1 ${getEventColor(event.event_type)}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">{getEventIcon(event.event_type)}</span>
+                            <span className="text-sm font-medium text-gray-800">
+                              {getEventLabel(event.event_type)}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                            {formatDateTime(event.created_at)}
+                          </span>
+                        </div>
+                        {getEventDetail(event) && (
+                          <p className="text-xs text-gray-600 mt-0.5 ml-5">
+                            {getEventDetail(event)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Final dot - form submitted */}
+                  <div className="relative flex gap-4 pl-2">
+                    <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                      <div className="w-3 h-3 rounded-full bg-green-500 ring-2 ring-green-200" />
+                    </div>
+                    <div className="flex-1 rounded-lg border border-green-200 bg-green-50 px-3 py-2 mb-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">✅</span>
+                          <span className="text-sm font-medium text-green-800">
+                            Submitted consultation request
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400 whitespace-nowrap">
+                          {formatDateTime(lead.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
