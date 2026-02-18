@@ -592,3 +592,159 @@
 - [ ] Mobile optimization
 - [ ] A/B test lead widget messaging
 - [ ] Advanced analytics dashboard
+
+---
+
+## SEO & Growth Strategy (Future Roadmap)
+
+### Phase 4: SEO Foundations (High Priority - Free)
+**Impact:** 100x traffic potential | **Cost:** $0 | **Time:** 4-6 hours
+
+- [ ] **Meta titles & descriptions** - Add unique titles/descriptions to all 3,261 occupation pages
+  - Format: "[Occupation Name] ([Code]) - Australian Visa Eligibility | [Site Name]"
+  - Example: "Registered Nurse (254111) - Australian Visa Eligibility | AusVisaCheck"
+
+- [ ] **Generate sitemap.xml** - Tell Google about all 3,261 pages
+
+- [ ] **Add robots.txt** - Control what Google crawls
+
+- [ ] **Google Search Console setup** - Essential SEO analytics (free)
+
+- [ ] **Structured data (JSON-LD)** - Help Google understand occupation pages
+  - Schema.org types: Occupation, HowTo, FAQPage
+
+- [ ] **FAQ sections per occupation** - Answer common questions
+  - "What visas can [occupation] apply for?"
+  - "Is [occupation] on the skilled occupation list?"
+  - "What is the skills assessment for [occupation]?"
+
+### Phase 5: Content Expansion (Medium Priority)
+**Impact:** Long-term organic traffic | **Cost:** Free-$500/mo | **Time:** Ongoing
+
+- [ ] **Points calculator** - High search volume, viral potential
+  - "Australia points test calculator 2026"
+  - Interactive tool with instant results
+
+- [ ] **Blog/news section** - Target high-volume migration searches
+  - "How to migrate to Australia as a [occupation] in 2026"
+  - "CSOL occupation list changes - what it means for you"
+  - Country-specific guides (Philippines → Australia, India → Australia, etc.)
+
+- [ ] **State nomination tracker** - Which states are open for which occupations
+
+- [ ] **Occupation deep pages** - Expand each occupation page with:
+  - Average salary in Australia
+  - Career pathways and progression
+  - Skills assessment requirements
+  - Related occupations
+
+- [ ] **Visa comparison pages** - "482 vs 189 visa - what's the difference"
+
+- [ ] **Document checklist tool** - "What documents do I need for visa 189"
+
+### Phase 6: Domain & Branding
+**Impact:** Trust + SEO boost | **Cost:** $20-30/year | **Time:** 2-3 hours
+
+- [ ] **Choose domain name** - Options to consider:
+  - Keyword-rich: ausvisacheck.com.au, anzscotools.com.au
+  - Professional: migratepath.com.au, visaready.com.au
+  - Action: checkmyvisa.com.au, findmyvisa.com.au
+  - Authority: australianmigrationhub.com.au
+
+- [ ] **Register .com.au domain** - Builds Australian trust ($20-30/year)
+
+- [ ] **Set up domain with Vercel** - Point new domain to existing site
+
+- [ ] **Update all branding** - Logo, meta tags, social cards
+
+### Phase 7: LLM/AI Discoverability (Emerging Opportunity)
+**Impact:** Get cited by AI tools | **Cost:** Free | **Time:** 3-4 hours
+
+- [ ] **Optimize for Perplexity** - Add direct answer paragraphs
+  - "Registered Nurse (254111) is eligible for the 189 visa because..."
+
+- [ ] **Add Q&A format content** - LLMs extract and cite Q&A well
+
+- [ ] **Keep data fresh with dates** - "Last updated: [date]" on all pages
+
+- [ ] **Citation-worthy summaries** - Write concise, accurate summaries LLMs can quote
+
+### Phase 8: Distribution & Reach (Free → Paid)
+**Impact:** Immediate traffic | **Cost:** $0-600/mo | **Time:** Ongoing
+
+**Free channels:**
+- [ ] Reddit presence - r/AusVisa, r/australia, r/immigration (helpful posts, not spam)
+- [ ] Facebook Groups - "Moving to Australia", "Australian Visa Help" groups
+- [ ] LinkedIn targeting - HR professionals, recruiters, migration agents
+- [ ] YouTube tutorials - "How to check your visa eligibility" (link to tool)
+- [ ] Quora answers - Link to relevant occupation pages
+- [ ] Migration forums - Expat forums, Whirlpool Australia
+
+**Paid channels (when ready):**
+- [ ] Google Ads - $5-20/day targeting "migrate to Australia [occupation]"
+- [ ] Facebook/Instagram Ads - Target Philippines, India, UK, Malaysia users
+- [ ] SEO tools - Ahrefs or SEMrush ($100-200/mo) for keyword research
+- [ ] Content writers - $50-200/post for migration blog content
+
+### Phase 9: Advanced Features (Future)
+**Impact:** Competitive moat | **Cost:** Varies | **Time:** 10-20 hours each
+
+- [ ] **EOI tracker** - Invitation rounds data and predictions
+- [ ] **Agent directory** - List of RMAs (monetization opportunity)
+- [ ] **Salary database** - Average salaries per occupation in Australia
+- [ ] **Job board integration** - Link to actual job openings per occupation
+- [ ] **Mobile app** - React Native or PWA
+- [ ] **Multi-language support** - Chinese, Tagalog, Hindi, Spanish
+- [ ] **API for migration agents** - White-label or embed on their sites
+
+---
+
+## Analytics-Driven Content Strategy
+
+Use your lead intelligence to prioritize content:
+
+**Data to track monthly:**
+- Which occupations get the most searches
+- Which countries users come from (target content)
+- Which visas users research most
+- Which occupations have highest intent scores
+- Drop-off points in research journey
+
+**Content decisions based on data:**
+- If 40% of searches are nursing → write nurse migration guides
+- If Malaysia dominates traffic → write Malaysia-specific pathway content
+- If users click lots of 482 info buttons → create detailed 482 explainer
+- If users spend 15+ min on certain occupations → those need deep content pages
+
+---
+
+## Success Metrics to Track
+
+**SEO Performance:**
+- Google Search Console impressions and clicks
+- Organic traffic growth month-over-month
+- Number of keywords ranking in top 10
+- Backlinks from migration sites/forums
+
+**Lead Quality:**
+- Average intent score of leads
+- Conversion rate (lead → booked consultation)
+- Revenue per lead
+- Time from first visit to lead submission
+
+**Content Effectiveness:**
+- Which blog posts drive the most traffic
+- Which occupation pages convert to leads best
+- Bounce rate vs engagement rate
+- Pages per session
+
+**LLM Citations (emerging):**
+- Track Perplexity citations (manual check)
+- Monitor referral traffic from AI tools
+- Track branded searches (site name awareness)
+
+---
+
+Last Updated: February 17, 2026
+Status: Phase 3 complete ✅ | SEO roadmap defined
+Next: Choose domain name + implement SEO foundations
