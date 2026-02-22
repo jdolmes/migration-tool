@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://migration-tool-git-main-jdolmes-projects.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://migration-tool-eight.vercel.app'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch all unique occupation codes
