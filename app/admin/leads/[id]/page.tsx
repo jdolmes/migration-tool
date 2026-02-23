@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Send,
   CheckCircle,
+  ChevronDown,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
@@ -115,6 +116,77 @@ export default function LeadDetailPage() {
   const [summary, setSummary] = useState<JourneySummary | null>(null)
   const [realIntentScore, setRealIntentScore] = useState<number | null>(null)
   const [occupationNames, setOccupationNames] = useState<Record<string, string>>({})
+  const [expandedOccupations, setExpandedOccupations] = useState<Set<string>>(new Set())
+
+  // Process journey events to merge occupation views
+  type TimelineItem =
+    | { type: 'event'; event: AnalyticsEvent }
+    | { type: 'merged'; code: string; events: AnalyticsEvent[]; firstTimestamp: string }
+
+  const processedTimeline = useMemo((): TimelineItem[] => {
+    if (journey.length === 0) return []
+
+    const items: TimelineItem[] = []
+    const occupationEvents: Record<string, AnalyticsEvent[]> = {}
+
+    // Group occupation_viewed and related_occupation_clicked by code
+    for (const event of journey) {
+      if (
+        (event.event_type === 'occupation_viewed' || event.event_type === 'related_occupation_clicked') &&
+        event.occupation_code
+      ) {
+        if (!occupationEvents[event.occupation_code]) {
+          occupationEvents[event.occupation_code] = []
+        }
+        occupationEvents[event.occupation_code].push(event)
+      }
+    }
+
+    // Track which occupation codes have been added as merged
+    const addedOccupations = new Set<string>()
+
+    for (const event of journey) {
+      const isOccupationEvent =
+        (event.event_type === 'occupation_viewed' || event.event_type === 'related_occupation_clicked') &&
+        event.occupation_code
+
+      if (isOccupationEvent) {
+        const code = event.occupation_code!
+        // Only add merged entry on first occurrence of this occupation
+        if (!addedOccupations.has(code)) {
+          addedOccupations.add(code)
+          const events = occupationEvents[code]
+          if (events.length > 1) {
+            items.push({
+              type: 'merged',
+              code,
+              events,
+              firstTimestamp: events[0].created_at,
+            })
+          } else {
+            items.push({ type: 'event', event })
+          }
+        }
+        // Skip subsequent events for this occupation (they're merged)
+      } else {
+        items.push({ type: 'event', event })
+      }
+    }
+
+    return items
+  }, [journey])
+
+  const toggleOccupationExpand = (code: string) => {
+    setExpandedOccupations(prev => {
+      const next = new Set(prev)
+      if (next.has(code)) {
+        next.delete(code)
+      } else {
+        next.add(code)
+      }
+      return next
+    })
+  }
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -491,42 +563,109 @@ export default function LeadDetailPage() {
                 <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
 
                 <div className="space-y-3">
-                  {journey.map((event, index) => (
-                    <div key={event.id} className="relative flex gap-4 pl-2">
-                      {/* Timeline dot */}
-                      <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                        <div className={`w-2 h-2 rounded-full ${
-                          event.event_type === 'lin_clicked'
-                            ? 'bg-purple-500'
-                            : event.event_type === 'occupation_viewed'
-                              ? 'bg-blue-500'
-                              : event.event_type === 'info_button_clicked'
-                                ? 'bg-yellow-500'
-                                : 'bg-gray-400'
-                        }`} />
-                      </div>
+                  {processedTimeline.map((item, index) => {
+                    if (item.type === 'merged') {
+                      const isExpanded = expandedOccupations.has(item.code)
+                      const name = occupationNames[item.code]
+                      const displayName = name
+                        ? `${name} (${item.code})`
+                        : `ANZSCO ${item.code}`
 
-                      {/* Event Card */}
-                      <div className={`flex-1 rounded-lg border px-3 py-2 mb-1 ${getEventColor(event.event_type)}`}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm">{getEventIcon(event.event_type)}</span>
-                            <span className="text-sm font-medium text-gray-800">
-                              {getEventLabel(event.event_type)}
+                      return (
+                        <div key={`merged-${item.code}`}>
+                          {/* Merged occupation card */}
+                          <div className="relative flex gap-4 pl-2">
+                            <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                              <div className="w-2 h-2 rounded-full bg-blue-500" />
+                            </div>
+                            <div
+                              className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 mb-1 cursor-pointer hover:bg-blue-100 transition-colors"
+                              onClick={() => toggleOccupationExpand(item.code)}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-sm">👁️</span>
+                                  <span className="text-sm font-medium text-gray-800">
+                                    Viewed {displayName}
+                                  </span>
+                                  <span className="text-xs bg-blue-200 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">
+                                    ×{item.events.length}
+                                  </span>
+                                  <ChevronDown
+                                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                                      isExpanded ? 'rotate-180' : ''
+                                    }`}
+                                  />
+                                </div>
+                                <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                                  {formatDateTime(item.firstTimestamp)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Expanded individual events */}
+                          {isExpanded && (
+                            <div className="ml-8 pl-4 border-l-2 border-blue-200 space-y-2 mt-1 mb-2">
+                              {item.events.map((event) => (
+                                <div
+                                  key={event.id}
+                                  className="flex items-center justify-between text-xs text-gray-500 py-1"
+                                >
+                                  <span className="flex items-center gap-1.5">
+                                    <span>{event.event_type === 'related_occupation_clicked' ? '🔗' : '👁️'}</span>
+                                    {event.event_type === 'related_occupation_clicked'
+                                      ? 'Clicked related occupation'
+                                      : 'Viewed occupation'}
+                                  </span>
+                                  <span>{formatDateTime(event.created_at)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
+
+                    // Regular event rendering
+                    const event = item.event
+                    return (
+                      <div key={event.id} className="relative flex gap-4 pl-2">
+                        {/* Timeline dot */}
+                        <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                          <div className={`w-2 h-2 rounded-full ${
+                            event.event_type === 'lin_clicked'
+                              ? 'bg-purple-500'
+                              : event.event_type === 'occupation_viewed'
+                                ? 'bg-blue-500'
+                                : event.event_type === 'info_button_clicked'
+                                  ? 'bg-yellow-500'
+                                  : 'bg-gray-400'
+                          }`} />
+                        </div>
+
+                        {/* Event Card */}
+                        <div className={`flex-1 rounded-lg border px-3 py-2 mb-1 ${getEventColor(event.event_type)}`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm">{getEventIcon(event.event_type)}</span>
+                              <span className="text-sm font-medium text-gray-800">
+                                {getEventLabel(event.event_type)}
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                              {formatDateTime(event.created_at)}
                             </span>
                           </div>
-                          <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
-                            {formatDateTime(event.created_at)}
-                          </span>
+                          {getEventDetail(event, occupationNames) && (
+                            <p className="text-xs text-gray-600 mt-0.5 ml-5">
+                              {getEventDetail(event, occupationNames)}
+                            </p>
+                          )}
                         </div>
-                        {getEventDetail(event, occupationNames) && (
-                          <p className="text-xs text-gray-600 mt-0.5 ml-5">
-                            {getEventDetail(event, occupationNames)}
-                          </p>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
 
                   {/* Final dot - form submitted */}
                   <div className="relative flex gap-4 pl-2">
