@@ -118,59 +118,117 @@ export default function LeadDetailPage() {
   const [occupationNames, setOccupationNames] = useState<Record<string, string>>({})
   const [expandedOccupations, setExpandedOccupations] = useState<Set<string>>(new Set())
 
-  // Process journey events to merge occupation views
+  // Process journey events into nested timeline structure
+  type SubAction = {
+    type: 'anzsco_details' | 'lin_clicked' | 'info_clicked'
+    event: AnalyticsEvent
+  }
+
   type TimelineItem =
-    | { type: 'event'; event: AnalyticsEvent }
-    | { type: 'merged'; code: string; events: AnalyticsEvent[]; firstTimestamp: string }
+    | { type: 'search'; event: AnalyticsEvent }
+    | {
+        type: 'occupation'
+        code: string
+        viewCount: number
+        firstTimestamp: string
+        subActions: SubAction[]
+      }
 
   const processedTimeline = useMemo((): TimelineItem[] => {
     if (journey.length === 0) return []
 
     const items: TimelineItem[] = []
-    const occupationEvents: Record<string, AnalyticsEvent[]> = {}
 
-    // Group occupation_viewed and related_occupation_clicked by code
+    // First pass: collect all occupation views and their sub-actions
+    const occupationData: Record<string, {
+      viewCount: number
+      firstTimestamp: string
+      subActions: SubAction[]
+      hasAnzscoDetails: boolean
+    }> = {}
+
+    // Track current occupation context for events that might not have occupation_code
+    let currentOccupation: string | null = null
+
     for (const event of journey) {
-      if (
-        (event.event_type === 'occupation_viewed' || event.event_type === 'related_occupation_clicked') &&
-        event.occupation_code
-      ) {
-        if (!occupationEvents[event.occupation_code]) {
-          occupationEvents[event.occupation_code] = []
+      // Update current occupation context when viewing an occupation
+      if (event.event_type === 'occupation_viewed' && event.occupation_code) {
+        currentOccupation = event.occupation_code
+
+        if (!occupationData[event.occupation_code]) {
+          occupationData[event.occupation_code] = {
+            viewCount: 0,
+            firstTimestamp: event.created_at,
+            subActions: [],
+            hasAnzscoDetails: false,
+          }
         }
-        occupationEvents[event.occupation_code].push(event)
+        occupationData[event.occupation_code].viewCount++
+      }
+
+      // Collect sub-actions for occupations
+      const occupationCode = event.occupation_code || currentOccupation
+
+      if (occupationCode && occupationData[occupationCode]) {
+        // tab_switched to anzsco-details (show once per occupation)
+        if (event.event_type === 'tab_switched') {
+          const tabId = event.metadata?.to || event.metadata?.tab
+          if (tabId === 'anzsco-details' && !occupationData[occupationCode].hasAnzscoDetails) {
+            occupationData[occupationCode].hasAnzscoDetails = true
+            occupationData[occupationCode].subActions.push({
+              type: 'anzsco_details',
+              event,
+            })
+          }
+          // Skip visa-options tab switches entirely
+        }
+
+        // lin_clicked
+        if (event.event_type === 'lin_clicked') {
+          occupationData[occupationCode].subActions.push({
+            type: 'lin_clicked',
+            event,
+          })
+        }
+
+        // info_button_clicked
+        if (event.event_type === 'info_button_clicked') {
+          occupationData[occupationCode].subActions.push({
+            type: 'info_clicked',
+            event,
+          })
+        }
       }
     }
 
-    // Track which occupation codes have been added as merged
+    // Second pass: build timeline in chronological order
     const addedOccupations = new Set<string>()
 
     for (const event of journey) {
-      const isOccupationEvent =
-        (event.event_type === 'occupation_viewed' || event.event_type === 'related_occupation_clicked') &&
-        event.occupation_code
-
-      if (isOccupationEvent) {
-        const code = event.occupation_code!
-        // Only add merged entry on first occurrence of this occupation
-        if (!addedOccupations.has(code)) {
-          addedOccupations.add(code)
-          const events = occupationEvents[code]
-          if (events.length > 1) {
-            items.push({
-              type: 'merged',
-              code,
-              events,
-              firstTimestamp: events[0].created_at,
-            })
-          } else {
-            items.push({ type: 'event', event })
-          }
-        }
-        // Skip subsequent events for this occupation (they're merged)
-      } else {
-        items.push({ type: 'event', event })
+      // Search events are top-level
+      if (event.event_type === 'search_performed') {
+        items.push({ type: 'search', event })
+        continue
       }
+
+      // Occupation viewed - add as top-level with nested sub-actions
+      if (event.event_type === 'occupation_viewed' && event.occupation_code) {
+        if (!addedOccupations.has(event.occupation_code)) {
+          addedOccupations.add(event.occupation_code)
+          const data = occupationData[event.occupation_code]
+          items.push({
+            type: 'occupation',
+            code: event.occupation_code,
+            viewCount: data.viewCount,
+            firstTimestamp: data.firstTimestamp,
+            subActions: data.subActions,
+          })
+        }
+        continue
+      }
+
+      // Skip all other events - they're either nested under occupations or hidden
+      // (related_occupation_clicked, tab_switched, lin_clicked, info_button_clicked)
     }
 
     return items
@@ -564,7 +622,39 @@ export default function LeadDetailPage() {
 
                 <div className="space-y-3">
                   {processedTimeline.map((item, index) => {
-                    if (item.type === 'merged') {
+                    // Search event - top level
+                    if (item.type === 'search') {
+                      return (
+                        <div key={item.event.id} className="relative flex gap-4 pl-2">
+                          <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-gray-400" />
+                          </div>
+                          <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 mb-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm">🔍</span>
+                                <span className="text-sm font-medium text-gray-800">
+                                  Searched for occupation
+                                </span>
+                              </div>
+                              <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                                {formatDateTime(item.event.created_at)}
+                              </span>
+                            </div>
+                            {item.event.search_term && (
+                              <p className="text-xs text-gray-600 mt-0.5 ml-5">
+                                "{item.event.search_term}"
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    // Occupation event - top level with nested sub-actions
+                    if (item.type === 'occupation') {
+                      const hasSubActions = item.subActions.length > 0
+                      const isExpandable = item.viewCount > 1 || hasSubActions
                       const isExpanded = expandedOccupations.has(item.code)
                       const name = occupationNames[item.code]
                       const displayName = name
@@ -572,15 +662,17 @@ export default function LeadDetailPage() {
                         : `ANZSCO ${item.code}`
 
                       return (
-                        <div key={`merged-${item.code}`}>
-                          {/* Merged occupation card */}
+                        <div key={`occupation-${item.code}`}>
+                          {/* Occupation card */}
                           <div className="relative flex gap-4 pl-2">
                             <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
                               <div className="w-2 h-2 rounded-full bg-blue-500" />
                             </div>
                             <div
-                              className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 mb-1 cursor-pointer hover:bg-blue-100 transition-colors"
-                              onClick={() => toggleOccupationExpand(item.code)}
+                              className={`flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 mb-1 ${
+                                isExpandable ? 'cursor-pointer hover:bg-blue-100 transition-colors' : ''
+                              }`}
+                              onClick={isExpandable ? () => toggleOccupationExpand(item.code) : undefined}
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-center gap-1.5">
@@ -588,14 +680,18 @@ export default function LeadDetailPage() {
                                   <span className="text-sm font-medium text-gray-800">
                                     Viewed {displayName}
                                   </span>
-                                  <span className="text-xs bg-blue-200 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">
-                                    ×{item.events.length}
-                                  </span>
-                                  <ChevronDown
-                                    className={`w-4 h-4 text-gray-400 transition-transform ${
-                                      isExpanded ? 'rotate-180' : ''
-                                    }`}
-                                  />
+                                  {item.viewCount > 1 && (
+                                    <span className="text-xs bg-blue-200 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">
+                                      ×{item.viewCount}
+                                    </span>
+                                  )}
+                                  {isExpandable && (
+                                    <ChevronDown
+                                      className={`w-4 h-4 text-gray-400 transition-transform ${
+                                        isExpanded ? 'rotate-180' : ''
+                                      }`}
+                                    />
+                                  )}
                                 </div>
                                 <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
                                   {formatDateTime(item.firstTimestamp)}
@@ -604,67 +700,51 @@ export default function LeadDetailPage() {
                             </div>
                           </div>
 
-                          {/* Expanded individual events */}
-                          {isExpanded && (
-                            <div className="ml-8 pl-4 border-l-2 border-blue-200 space-y-2 mt-1 mb-2">
-                              {item.events.map((event) => (
-                                <div
-                                  key={event.id}
-                                  className="flex items-center justify-between text-xs text-gray-500 py-1"
-                                >
-                                  <span className="flex items-center gap-1.5">
-                                    <span>{event.event_type === 'related_occupation_clicked' ? '🔗' : '👁️'}</span>
-                                    {event.event_type === 'related_occupation_clicked'
-                                      ? 'Clicked related occupation'
-                                      : 'Viewed occupation'}
-                                  </span>
-                                  <span>{formatDateTime(event.created_at)}</span>
-                                </div>
-                              ))}
+                          {/* Nested sub-actions */}
+                          {isExpanded && hasSubActions && (
+                            <div className="ml-8 pl-4 border-l-2 border-blue-200 space-y-1.5 mt-1 mb-2">
+                              {item.subActions.map((subAction) => {
+                                let icon = '📄'
+                                let label = ''
+
+                                if (subAction.type === 'anzsco_details') {
+                                  icon = '🗂️'
+                                  label = 'Switched to ANZSCO Details'
+                                } else if (subAction.type === 'lin_clicked') {
+                                  icon = '📄'
+                                  const visa = subAction.event.visa_subclass
+                                  const stream = subAction.event.visa_stream
+                                  label = visa
+                                    ? `Clicked LIN — Visa ${visa}${stream ? ` (${stream})` : ''}`
+                                    : 'Clicked LIN'
+                                } else if (subAction.type === 'info_clicked') {
+                                  icon = 'ℹ️'
+                                  const visa = subAction.event.visa_subclass
+                                  label = visa ? `Clicked visa info — Visa ${visa}` : 'Clicked visa info'
+                                }
+
+                                return (
+                                  <div
+                                    key={subAction.event.id}
+                                    className="flex items-center justify-between text-xs py-1.5 px-2 rounded bg-white border border-gray-100"
+                                  >
+                                    <span className="flex items-center gap-1.5 text-gray-600">
+                                      <span>{icon}</span>
+                                      {label}
+                                    </span>
+                                    <span className="text-gray-400">
+                                      {formatDateTime(subAction.event.created_at)}
+                                    </span>
+                                  </div>
+                                )
+                              })}
                             </div>
                           )}
                         </div>
                       )
                     }
 
-                    // Regular event rendering
-                    const event = item.event
-                    return (
-                      <div key={event.id} className="relative flex gap-4 pl-2">
-                        {/* Timeline dot */}
-                        <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                          <div className={`w-2 h-2 rounded-full ${
-                            event.event_type === 'lin_clicked'
-                              ? 'bg-purple-500'
-                              : event.event_type === 'occupation_viewed'
-                                ? 'bg-blue-500'
-                                : event.event_type === 'info_button_clicked'
-                                  ? 'bg-yellow-500'
-                                  : 'bg-gray-400'
-                          }`} />
-                        </div>
-
-                        {/* Event Card */}
-                        <div className={`flex-1 rounded-lg border px-3 py-2 mb-1 ${getEventColor(event.event_type)}`}>
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm">{getEventIcon(event.event_type)}</span>
-                              <span className="text-sm font-medium text-gray-800">
-                                {getEventLabel(event.event_type)}
-                              </span>
-                            </div>
-                            <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
-                              {formatDateTime(event.created_at)}
-                            </span>
-                          </div>
-                          {getEventDetail(event, occupationNames) && (
-                            <p className="text-xs text-gray-600 mt-0.5 ml-5">
-                              {getEventDetail(event, occupationNames)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )
+                    return null
                   })}
 
                   {/* Final dot - form submitted */}
