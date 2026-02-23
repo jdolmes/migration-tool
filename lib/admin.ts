@@ -239,6 +239,13 @@ export function getEventDetail(
       const tabId = event.metadata?.to || event.metadata?.tab
       if (!tabId) return ''
       const tabLabel = TAB_LABELS[tabId] || tabId
+      if (event.occupation_code) {
+        const name = occupationNames?.[event.occupation_code]
+        const occupationDisplay = name
+          ? `${name} (${event.occupation_code})`
+          : event.occupation_code
+        return `Switched to ${tabLabel} tab — ${occupationDisplay}`
+      }
       return `Switched to ${tabLabel} tab`
     }
     case 'related_occupation_clicked': {

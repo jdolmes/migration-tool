@@ -571,6 +571,7 @@ trackEvent('occupation_viewed', {
             <button
               onClick={() => {
   trackEvent('tab_switched', {
+    occupationCode: code,
     metadata: { from: activeTab, to: 'visa-options' }
   })
   setActiveTab('visa-options')
@@ -592,6 +593,7 @@ trackEvent('occupation_viewed', {
             <button
               onClick={() => {
   trackEvent('tab_switched', {
+    occupationCode: code,
     metadata: { from: activeTab, to: 'anzsco-details' }
   })
   setActiveTab('anzsco-details')
