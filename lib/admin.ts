@@ -208,22 +208,46 @@ export function getEventColor(eventType: string): string {
   return colors[eventType] || 'border-gray-200 bg-gray-50'
 }
 
-export function getEventDetail(event: AnalyticsEvent): string {
+const TAB_LABELS: Record<string, string> = {
+  'anzsco-details': 'ANZSCO Details',
+  'visa-eligibility': 'Visa Eligibility',
+  'skills-assessment': 'Skills Assessment',
+  'related-occupations': 'Related Occupations',
+}
+
+export function getEventDetail(
+  event: AnalyticsEvent,
+  occupationNames?: Record<string, string>
+): string {
   switch (event.event_type) {
     case 'search_performed':
       return event.search_term ? `"${event.search_term}"` : ''
-    case 'occupation_viewed':
-      return event.occupation_code ? `ANZSCO ${event.occupation_code}` : ''
+    case 'occupation_viewed': {
+      if (!event.occupation_code) return ''
+      const name = occupationNames?.[event.occupation_code]
+      return name
+        ? `ANZSCO ${event.occupation_code} — ${name}`
+        : `ANZSCO ${event.occupation_code}`
+    }
     case 'lin_clicked':
       return event.visa_subclass
         ? `Visa ${event.visa_subclass}${event.visa_stream ? ` (${event.visa_stream})` : ''}`
         : ''
     case 'info_button_clicked':
       return event.visa_subclass ? `Visa ${event.visa_subclass}` : ''
-    case 'tab_switched':
-      return event.metadata?.tab ? `→ ${event.metadata.tab}` : ''
-    case 'related_occupation_clicked':
-      return event.occupation_code ? `ANZSCO ${event.occupation_code}` : ''
+    case 'tab_switched': {
+      const tabId = event.metadata?.to || event.metadata?.tab
+      if (!tabId) return ''
+      const tabLabel = TAB_LABELS[tabId] || tabId
+      return `Switched to ${tabLabel} tab`
+    }
+    case 'related_occupation_clicked': {
+      if (!event.occupation_code) return ''
+      const name = occupationNames?.[event.occupation_code]
+      return name
+        ? `ANZSCO ${event.occupation_code} — ${name}`
+        : `ANZSCO ${event.occupation_code}`
+    }
     default:
       return ''
   }

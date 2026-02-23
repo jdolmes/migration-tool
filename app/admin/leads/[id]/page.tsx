@@ -519,9 +519,9 @@ export default function LeadDetailPage() {
                             {formatDateTime(event.created_at)}
                           </span>
                         </div>
-                        {getEventDetail(event) && (
+                        {getEventDetail(event, occupationNames) && (
                           <p className="text-xs text-gray-600 mt-0.5 ml-5">
-                            {getEventDetail(event)}
+                            {getEventDetail(event, occupationNames)}
                           </p>
                         )}
                       </div>
