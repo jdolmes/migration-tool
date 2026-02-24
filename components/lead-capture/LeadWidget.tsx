@@ -92,7 +92,7 @@ export default function LeadWidget({
   }
 
   return (
-    <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50">
+    <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 pointer-events-none">
       {/* Minimized chat bubble - smaller on mobile */}
       <button
         onClick={handleExpand}
@@ -104,7 +104,7 @@ export default function LeadWidget({
           flex items-center justify-center
           transition-all duration-300 ease-in-out
           hover:scale-110 hover:shadow-xl hover:shadow-blue-500/40
-          ${isMinimized ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}
+          ${isMinimized ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-0 opacity-0 pointer-events-none'}
         `}
         aria-label="Open chat"
       >
@@ -121,7 +121,7 @@ export default function LeadWidget({
           border border-gray-100
           overflow-hidden
           transition-all duration-300 ease-in-out origin-bottom-right
-          ${!isMinimized ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}
+          ${!isMinimized ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-95 opacity-0 pointer-events-none'}
         `}
       >
         {/* Header */}
