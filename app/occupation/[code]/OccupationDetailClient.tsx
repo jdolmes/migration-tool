@@ -537,6 +537,12 @@ trackEvent('occupation_viewed', {
   }
 
   const toggleMobileAccordion = (section: 'visaOptions' | 'anzscoDetails') => {
+    // Update state first so UI responds immediately
+    setMobileAccordion(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }))
+    // Track analytics after state update
     if (section === 'visaOptions') {
       trackEvent('tab_switched', {
         occupationCode: code,
@@ -548,10 +554,6 @@ trackEvent('occupation_viewed', {
         metadata: { from: mobileAccordion.anzscoDetails ? 'anzsco-details' : 'closed', to: 'anzsco-details' }
       })
     }
-    setMobileAccordion(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }))
   }
 
   if (loading) {
@@ -583,25 +585,6 @@ trackEvent('occupation_viewed', {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {caveatModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-900">{caveatModal.title}</h3>
-                <button
-                  onClick={() => setCaveatModal({ show: false, title: '', content: '' })}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <p className="text-gray-700 whitespace-pre-line">{caveatModal.content}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-8">
@@ -1185,14 +1168,16 @@ trackEvent('occupation_viewed', {
               {ineligibleVisas.length > 0 && (
                 <div className="pt-4 border-t border-gray-200">
                   <button
+                    type="button"
                     onClick={() => setShowIneligible(!showIneligible)}
-                    className="w-full py-3 min-h-[44px] flex items-center justify-between text-sm font-semibold text-gray-600 mb-3"
+                    className="w-full py-3 min-h-[44px] flex items-center justify-between text-sm font-semibold text-gray-600 mb-3 cursor-pointer select-none active:bg-gray-100 touch-manipulation"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-2 pointer-events-none">
                       <X className="w-4 h-4" />
                       Visas not available ({ineligibleVisas.length})
                     </span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${showIneligible ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 transition-transform pointer-events-none ${showIneligible ? 'rotate-180' : ''}`} />
                   </button>
                   {showIneligible && (
                     <div className="space-y-2">
