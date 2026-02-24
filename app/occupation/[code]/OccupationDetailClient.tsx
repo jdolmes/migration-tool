@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { trackEvent } from '../../../lib/analytics'
-import { ArrowLeft, ExternalLink, Info, X, Check } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Info, X, Check, ChevronDown } from 'lucide-react'
 import LeadWidget from '@/components/lead-capture/LeadWidget'
 
 // ============================================
@@ -104,8 +104,16 @@ export default function OccupationDetailClient() {
     content: ''
   })
 
-  // NEW: Active tab state - DEFAULTS TO VISA OPTIONS
+  // Active tab/accordion state
   const [activeTab, setActiveTab] = useState<'visa-options' | 'anzsco-details'>('visa-options')
+  const [mobileAccordion, setMobileAccordion] = useState<{
+    visaOptions: boolean
+    anzscoDetails: boolean
+  }>({ visaOptions: true, anzscoDetails: false })
+  const [showIneligible, setShowIneligible] = useState(false)
+
+  // Ineligible visas state
+  const [ineligibleVisas, setIneligibleVisas] = useState<VisaOption[]>([])
 
   // Lead capture widget state - tracks if widget should auto-expand
   const [widgetExpanded, setWidgetExpanded] = useState(false)
@@ -295,27 +303,47 @@ trackEvent('occupation_viewed', {
       if (occupations.length === 0) return
 
       try {
-        const allVisas: VisaOption[] = []
+        const eligibleVisas: VisaOption[] = []
+        const notEligibleVisas: VisaOption[] = []
 
         for (const occ of occupations) {
-          const { data, error } = await supabase
+          // Fetch eligible visas
+          const { data: eligibleData, error: eligibleError } = await supabase
             .from('visa_eligibility')
             .select('visa_id, anzsco_code, catalogue_version, is_eligible, eligibility_reason, applicable_lists, visa:visas!inner(subclass, visa_name, stream, category, catalogue_version, legislative_instrument)')
             .eq('anzsco_code', code)
             .eq('catalogue_version', occ.catalogue_version)
             .eq('is_eligible', true)
 
-          if (error) throw error
-          if (data) {
-            const transformedData = data.map((item: any) => ({
+          if (eligibleError) throw eligibleError
+          if (eligibleData) {
+            const transformedData = eligibleData.map((item: any) => ({
               ...item,
               visa: Array.isArray(item.visa) ? item.visa[0] : item.visa
             }))
-            allVisas.push(...transformedData)
+            eligibleVisas.push(...transformedData)
+          }
+
+          // Fetch ineligible visas
+          const { data: ineligibleData, error: ineligibleError } = await supabase
+            .from('visa_eligibility')
+            .select('visa_id, anzsco_code, catalogue_version, is_eligible, eligibility_reason, applicable_lists, visa:visas!inner(subclass, visa_name, stream, category, catalogue_version, legislative_instrument)')
+            .eq('anzsco_code', code)
+            .eq('catalogue_version', occ.catalogue_version)
+            .eq('is_eligible', false)
+
+          if (ineligibleError) throw ineligibleError
+          if (ineligibleData) {
+            const transformedData = ineligibleData.map((item: any) => ({
+              ...item,
+              visa: Array.isArray(item.visa) ? item.visa[0] : item.visa
+            }))
+            notEligibleVisas.push(...transformedData)
           }
         }
 
-        setAllVisaOptions(allVisas)
+        setAllVisaOptions(eligibleVisas)
+        setIneligibleVisas(notEligibleVisas)
 
         // Determine list membership
         const v13Occ = occupations.find(o => o.catalogue_version === 'v1.3')
@@ -483,6 +511,49 @@ trackEvent('occupation_viewed', {
     return stream
   }
 
+  const hasCaveats = (subclass: string, stream: string | null): boolean => {
+    const visaKey = getVisaKey(subclass, stream)
+    const rules = VISA_LIST_RULES[visaKey]
+    return rules?.hasInfoButton || false
+  }
+
+  const getApplicableLists = (option: VisaOption): string[] => {
+    const visaKey = getVisaKey(option.visa.subclass, option.visa.stream)
+    const rules = VISA_LIST_RULES[visaKey]
+    if (!rules) return []
+
+    const lists: string[] = []
+    const version = option.visa.catalogue_version
+
+    if (version === 'v1.3') {
+      if (rules.lists.includes('MLTSSL') && listMembership.v13.MLTSSL) lists.push('MLTSSL')
+      if (rules.lists.includes('STSOL') && listMembership.v13.STSOL) lists.push('STSOL')
+      if (rules.lists.includes('ROL') && listMembership.v13.ROL) lists.push('ROL')
+    } else if (version === 'v2022') {
+      if (rules.lists.includes('CSOL') && listMembership.v2022.CSOL) lists.push('CSOL')
+    }
+
+    return lists
+  }
+
+  const toggleMobileAccordion = (section: 'visaOptions' | 'anzscoDetails') => {
+    if (section === 'visaOptions') {
+      trackEvent('tab_switched', {
+        occupationCode: code,
+        metadata: { from: mobileAccordion.visaOptions ? 'visa-options' : 'closed', to: 'visa-options' }
+      })
+    } else {
+      trackEvent('tab_switched', {
+        occupationCode: code,
+        metadata: { from: mobileAccordion.anzscoDetails ? 'anzsco-details' : 'closed', to: 'anzsco-details' }
+      })
+    }
+    setMobileAccordion(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }))
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -564,18 +635,18 @@ trackEvent('occupation_viewed', {
         </div>
       </div>
 
-      {/* NEW: Tab Navigation */}
-      <div className="bg-white border-b border-gray-200">
+      {/* Desktop Tab Navigation - Hidden on mobile */}
+      <div className="hidden md:block bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-1">
             <button
               onClick={() => {
-  trackEvent('tab_switched', {
-    occupationCode: code,
-    metadata: { from: activeTab, to: 'visa-options' }
-  })
-  setActiveTab('visa-options')
-}}
+                trackEvent('tab_switched', {
+                  occupationCode: code,
+                  metadata: { from: activeTab, to: 'visa-options' }
+                })
+                setActiveTab('visa-options')
+              }}
               className={`px-8 py-4 font-semibold text-sm transition-all relative ${
                 activeTab === 'visa-options'
                   ? 'text-blue-600'
@@ -592,12 +663,12 @@ trackEvent('occupation_viewed', {
             </button>
             <button
               onClick={() => {
-  trackEvent('tab_switched', {
-    occupationCode: code,
-    metadata: { from: activeTab, to: 'anzsco-details' }
-  })
-  setActiveTab('anzsco-details')
-}}
+                trackEvent('tab_switched', {
+                  occupationCode: code,
+                  metadata: { from: activeTab, to: 'anzsco-details' }
+                })
+                setActiveTab('anzsco-details')
+              }}
               className={`px-8 py-4 font-semibold text-sm transition-all relative ${
                 activeTab === 'anzsco-details'
                   ? 'text-blue-600'
@@ -616,99 +687,144 @@ trackEvent('occupation_viewed', {
         </div>
       </div>
 
-      {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-6 py-10">
-
-        {/* VISA OPTIONS TAB - NOW SHOWN FIRST */}
+      {/* Desktop Tab Content */}
+      <div className="hidden md:block max-w-7xl mx-auto px-6 py-10">
+        {/* VISA OPTIONS TAB */}
         {activeTab === 'visa-options' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-8 py-6 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-                Possible Visa Options
-              </h2>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b-2 border-gray-200">
-                  <tr>
-                    <th className="px-8 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Visa Type</th>
-                    <th className="px-8 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Eligibility</th>
-                    <th className="px-8 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Legislative Instrument</th>
-                    <th className="px-8 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">MLTSSL</th>
-                    <th className="px-8 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">STSOL</th>
-                    <th className="px-8 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">ROL</th>
-                    <th className="px-8 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">CSOL</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                  {allVisaOptions.length > 0 ? (
-                    allVisaOptions.map((option, idx) => (
-                      <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className={`flex items-center justify-center px-4 py-2.5 rounded-xl font-bold text-white text-sm min-w-[70px] shadow-sm ${
-                              option.visa.category === 'Permanent'
-                                ? 'bg-gradient-to-br from-green-500 to-green-600'
-                                : 'bg-gradient-to-br from-gray-500 to-gray-600'
-                            }`}>
+          <div className="space-y-6">
+            {/* Eligible Visas Section */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200">
+                <h2 className="text-lg font-bold text-green-800 flex items-center gap-2">
+                  <Check className="w-5 h-5" />
+                  Visas you may be eligible for
+                </h2>
+              </div>
+              <div className="p-6">
+                {allVisaOptions.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {allVisaOptions.map((option, idx) => (
+                      <div key={idx} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-white text-sm bg-blue-600">
                               {option.visa.subclass}
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-900 text-base">{option.visa.visa_name}</div>
-                              {option.visa.stream && (
-                                <div className="text-sm text-gray-500 font-medium">{formatStreamName(option.visa.stream)}</div>
-                              )}
-                              <div className="text-xs text-gray-400 font-medium mt-0.5">{option.visa.category}</div>
-                            </div>
+                            </span>
+                            <span className={`text-xs font-medium px-2 py-1 rounded ${
+                              option.visa.category === 'Permanent'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {option.visa.category}
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <span className="inline-flex items-center px-4 py-1.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200">
-                            <Check className="w-4 h-4 mr-1.5" />
-                            Eligible
+                          <span className="text-green-600">
+                            <Check className="w-5 h-5" />
                           </span>
-                        </td>
-                        <td className="px-8 py-5">
-                          {option.visa.legislative_instrument ? (
+                        </div>
+                        <h3 className="font-semibold text-gray-900 mb-1">{option.visa.visa_name}</h3>
+                        {option.visa.stream && (
+                          <p className="text-sm text-gray-500 mb-3">{formatStreamName(option.visa.stream)}</p>
+                        )}
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {getApplicableLists(option).map(list => (
+                            <span key={list} className="text-xs font-medium px-2 py-1 rounded bg-blue-100 text-blue-700">
+                              {list}
+                            </span>
+                          ))}
+                          {option.visa.legislative_instrument && (
                             <a
                               href={getLINUrl(option.visa.legislative_instrument)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center gap-1.5 hover:underline"
                               onClick={() => trackEvent('lin_clicked', {
                                 visaSubclass: option.visa.subclass,
                                 visaStream: option.visa.stream || undefined,
                                 occupationCode: code,
                                 metadata: {
                                   lin_code: option.visa.legislative_instrument,
-                                  eligibility: option.is_eligible ? 'eligible' : 'not_eligible'
+                                  eligibility: 'eligible'
                                 }
                               })}
+                              className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition-colors flex items-center gap-1"
                             >
-                              {option.visa.legislative_instrument}
-                              <ExternalLink className="w-3.5 h-3.5" />
+                              LIN <ExternalLink className="w-3 h-3" />
                             </a>
-                          ) : (
-                            getInfoButton(option.visa.subclass, option.visa.stream) || <span className="text-gray-400 text-sm">—</span>
                           )}
-                        </td>
-                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.subclass, option.visa.stream, option.visa.catalogue_version, 'MLTSSL')}</td>
-                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.subclass, option.visa.stream, option.visa.catalogue_version, 'STSOL')}</td>
-                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.subclass, option.visa.stream, option.visa.catalogue_version, 'ROL')}</td>
-                        <td className="px-8 py-5 text-center">{getListIndicator(option.visa.subclass, option.visa.stream, option.visa.catalogue_version, 'CSOL')}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="px-8 py-16 text-center text-gray-500 text-base">
-                        No eligible visa options found for this occupation based on current data.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                          {hasCaveats(option.visa.subclass, option.visa.stream) && (
+                            <button
+                              onClick={() => {
+                                const visaKey = getVisaKey(option.visa.subclass, option.visa.stream)
+                                const rules = VISA_LIST_RULES[visaKey]
+                                trackEvent('info_button_clicked', {
+                                  visaSubclass: option.visa.subclass,
+                                  visaStream: option.visa.stream || undefined,
+                                  occupationCode: code,
+                                  metadata: { info_type: rules?.infoTitle || 'Caveats' }
+                                })
+                                setCaveatModal({
+                                  show: true,
+                                  title: rules?.infoTitle || 'Special Requirements',
+                                  content: rules?.infoText || ''
+                                })
+                              }}
+                              className="text-xs font-medium px-2 py-1 rounded bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors flex items-center gap-1"
+                            >
+                              Caveats <Info className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500 py-8">
+                    No eligible visa options found for this occupation based on current data.
+                  </p>
+                )}
+              </div>
             </div>
+
+            {/* Ineligible Visas Section */}
+            {ineligibleVisas.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setShowIneligible(!showIneligible)}
+                  className="w-full px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                >
+                  <h2 className="text-lg font-bold text-gray-600 flex items-center gap-2">
+                    <X className="w-5 h-5" />
+                    Visas not available for this occupation ({ineligibleVisas.length})
+                  </h2>
+                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showIneligible ? 'rotate-180' : ''}`} />
+                </button>
+                {showIneligible && (
+                  <div className="p-6">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {ineligibleVisas.map((option, idx) => (
+                        <div key={idx} className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-white text-sm bg-gray-400">
+                              {option.visa.subclass}
+                            </span>
+                            <span className="text-red-500">
+                              <X className="w-5 h-5" />
+                            </span>
+                          </div>
+                          <h3 className="font-semibold text-gray-700 mb-1">{option.visa.visa_name}</h3>
+                          {option.visa.stream && (
+                            <p className="text-sm text-gray-500 mb-2">{formatStreamName(option.visa.stream)}</p>
+                          )}
+                          <p className="text-xs text-red-600 mt-2">
+                            {option.eligibility_reason || 'Not on required occupation list'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -907,6 +1023,265 @@ trackEvent('occupation_viewed', {
                 )
               })()}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Accordion Layout - Hidden on desktop */}
+      <div className="md:hidden px-4 py-6 space-y-4">
+        {/* Visa Options Accordion */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <button
+            onClick={() => toggleMobileAccordion('visaOptions')}
+            className="w-full px-4 py-4 flex items-center justify-between bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200"
+          >
+            <span className="font-bold text-green-800 flex items-center gap-2">
+              <Check className="w-5 h-5" />
+              Visa Options
+            </span>
+            <ChevronDown className={`w-5 h-5 text-green-600 transition-transform ${mobileAccordion.visaOptions ? 'rotate-180' : ''}`} />
+          </button>
+          {mobileAccordion.visaOptions && (
+            <div className="p-4 space-y-4">
+              {/* Eligible Visas */}
+              <div>
+                <h3 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  Visas you may be eligible for
+                </h3>
+                {allVisaOptions.length > 0 ? (
+                  <div className="space-y-3">
+                    {allVisaOptions.map((option, idx) => (
+                      <div key={idx} className="bg-white rounded-lg border border-gray-200 p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg font-bold text-white text-xs bg-blue-600">
+                              {option.visa.subclass}
+                            </span>
+                            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                              option.visa.category === 'Permanent'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {option.visa.category}
+                            </span>
+                          </div>
+                          <span className="text-green-600">
+                            <Check className="w-4 h-4" />
+                          </span>
+                        </div>
+                        <h4 className="font-semibold text-gray-900 text-sm">{option.visa.visa_name}</h4>
+                        {option.visa.stream && (
+                          <p className="text-xs text-gray-500">{formatStreamName(option.visa.stream)}</p>
+                        )}
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {getApplicableLists(option).map(list => (
+                            <span key={list} className="text-xs font-medium px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                              {list}
+                            </span>
+                          ))}
+                          {option.visa.legislative_instrument && (
+                            <a
+                              href={getLINUrl(option.visa.legislative_instrument)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => trackEvent('lin_clicked', {
+                                visaSubclass: option.visa.subclass,
+                                visaStream: option.visa.stream || undefined,
+                                occupationCode: code,
+                                metadata: { lin_code: option.visa.legislative_instrument, eligibility: 'eligible' }
+                              })}
+                              className="text-xs font-medium px-1.5 py-0.5 rounded bg-green-100 text-green-700 flex items-center gap-1"
+                            >
+                              LIN <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                          {hasCaveats(option.visa.subclass, option.visa.stream) && (
+                            <button
+                              onClick={() => {
+                                const visaKey = getVisaKey(option.visa.subclass, option.visa.stream)
+                                const rules = VISA_LIST_RULES[visaKey]
+                                trackEvent('info_button_clicked', {
+                                  visaSubclass: option.visa.subclass,
+                                  visaStream: option.visa.stream || undefined,
+                                  occupationCode: code,
+                                  metadata: { info_type: rules?.infoTitle || 'Caveats' }
+                                })
+                                setCaveatModal({
+                                  show: true,
+                                  title: rules?.infoTitle || 'Special Requirements',
+                                  content: rules?.infoText || ''
+                                })
+                              }}
+                              className="text-xs font-medium px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 flex items-center gap-1"
+                            >
+                              Caveats <Info className="w-2.5 h-2.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No eligible visa options found for this occupation.
+                  </p>
+                )}
+              </div>
+
+              {/* Ineligible Visas */}
+              {ineligibleVisas.length > 0 && (
+                <div className="pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => setShowIneligible(!showIneligible)}
+                    className="w-full flex items-center justify-between text-sm font-semibold text-gray-600 mb-3"
+                  >
+                    <span className="flex items-center gap-2">
+                      <X className="w-4 h-4" />
+                      Visas not available ({ineligibleVisas.length})
+                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showIneligible ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showIneligible && (
+                    <div className="space-y-2">
+                      {ineligibleVisas.map((option, idx) => (
+                        <div key={idx} className="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                          <div className="flex items-start justify-between mb-1">
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded font-bold text-white text-xs bg-gray-400">
+                              {option.visa.subclass}
+                            </span>
+                            <span className="text-red-500">
+                              <X className="w-4 h-4" />
+                            </span>
+                          </div>
+                          <h4 className="font-medium text-gray-700 text-sm">{option.visa.visa_name}</h4>
+                          {option.visa.stream && (
+                            <p className="text-xs text-gray-500">{formatStreamName(option.visa.stream)}</p>
+                          )}
+                          <p className="text-xs text-red-600 mt-1">
+                            {option.eligibility_reason || 'Not on required occupation list'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ANZSCO Details Accordion */}
+        {v2022Occ && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <button
+              onClick={() => toggleMobileAccordion('anzscoDetails')}
+              className="w-full px-4 py-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200"
+            >
+              <span className="font-bold text-blue-800 flex items-center gap-2">
+                <Info className="w-5 h-5" />
+                ANZSCO Details
+              </span>
+              <ChevronDown className={`w-5 h-5 text-blue-600 transition-transform ${mobileAccordion.anzscoDetails ? 'rotate-180' : ''}`} />
+            </button>
+            {mobileAccordion.anzscoDetails && (
+              <div className="p-4 space-y-6">
+                {(() => {
+                  const hasHierarchy = v2022Occ.major_group && v2022Occ.unit_group
+                  const altTitles = Array.isArray(v2022Occ.alternative_titles) ? v2022Occ.alternative_titles : []
+                  const specs = Array.isArray(v2022Occ.specialisations) ? v2022Occ.specialisations : []
+                  const tasks = Array.isArray(v2022Occ.tasks) ? v2022Occ.tasks : []
+                  const hasAltTitles = altTitles.length > 0
+                  const hasSpecs = specs.length > 0
+                  const hasDescription = v2022Occ.description && v2022Occ.description.trim().length > 0
+                  const hasTasks = tasks.length > 0
+
+                  return (
+                    <>
+                      {/* ANZSCO Hierarchy */}
+                      {hasHierarchy && (
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="font-semibold text-gray-700">Major Group:</span>
+                              <span className="ml-1 text-gray-900">{v2022Occ.major_group} - {v2022Occ.major_group_title}</span>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-700">Unit Group:</span>
+                              <span className="ml-1 text-gray-900">{v2022Occ.unit_group} - {v2022Occ.unit_group_title}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Description */}
+                      {hasDescription && (
+                        <div>
+                          <h3 className="font-bold text-gray-900 mb-2 text-sm">Description</h3>
+                          <p className="text-gray-700 text-sm leading-relaxed">{v2022Occ.description}</p>
+                        </div>
+                      )}
+
+                      {/* Tasks */}
+                      {hasTasks && (
+                        <div>
+                          <h3 className="font-bold text-gray-900 mb-2 text-sm">Tasks Include</h3>
+                          <ul className="space-y-1.5">
+                            {tasks.slice(0, 5).map((task, idx) => (
+                              <li key={idx} className="flex items-start gap-2 text-gray-700 text-sm">
+                                <span className="text-orange-500 mt-1">•</span>
+                                <span>{task}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Alternative Titles */}
+                      {hasAltTitles && (
+                        <div>
+                          <h3 className="font-bold text-gray-900 mb-2 text-sm">Alternative Titles</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {altTitles.map((title, idx) => (
+                              <span key={idx} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs border border-blue-200">
+                                {title}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Specialisations */}
+                      {hasSpecs && (
+                        <div>
+                          <h3 className="font-bold text-gray-900 mb-2 text-sm">Specialisations</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {specs.slice(0, 6).map((spec, idx) => (
+                              <span key={idx} className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs border border-purple-200">
+                                {spec}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ABS Link */}
+                      <div className="pt-4 border-t border-gray-200">
+                        <a
+                          href={`https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022/browse-classification/${v2022Occ.code.substring(0,1)}/${v2022Occ.code.substring(0,2)}/${v2022Occ.code.substring(0,4)}/${v2022Occ.code}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-blue-600 text-sm font-medium"
+                        >
+                          View on ABS website
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+            )}
           </div>
         )}
       </div>
