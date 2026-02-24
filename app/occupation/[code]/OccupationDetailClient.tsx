@@ -1082,14 +1082,16 @@ trackEvent('occupation_viewed', {
         {/* Visa Options Accordion */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <button
+            type="button"
             onClick={() => toggleMobileAccordion('visaOptions')}
-            className="w-full px-4 py-4 min-h-[56px] flex items-center justify-between bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200"
+            className="w-full px-4 py-4 min-h-[56px] flex items-center justify-between bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 cursor-pointer select-none active:bg-green-100 touch-manipulation"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           >
-            <span className="font-bold text-green-800 flex items-center gap-2">
+            <span className="font-bold text-green-800 flex items-center gap-2 pointer-events-none">
               <Check className="w-5 h-5" />
               Visa Options
             </span>
-            <ChevronDown className={`w-5 h-5 text-green-600 transition-transform ${mobileAccordion.visaOptions ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-5 h-5 text-green-600 transition-transform pointer-events-none ${mobileAccordion.visaOptions ? 'rotate-180' : ''}`} />
           </button>
           {mobileAccordion.visaOptions && (
             <div className="p-4 space-y-4">
@@ -1225,14 +1227,16 @@ trackEvent('occupation_viewed', {
         {v2022Occ && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <button
+              type="button"
               onClick={() => toggleMobileAccordion('anzscoDetails')}
-              className="w-full px-4 py-4 min-h-[56px] flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200"
+              className="w-full px-4 py-4 min-h-[56px] flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 cursor-pointer select-none active:bg-blue-100 touch-manipulation"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <span className="font-bold text-blue-800 flex items-center gap-2">
+              <span className="font-bold text-blue-800 flex items-center gap-2 pointer-events-none">
                 <Info className="w-5 h-5" />
                 ANZSCO Details
               </span>
-              <ChevronDown className={`w-5 h-5 text-blue-600 transition-transform ${mobileAccordion.anzscoDetails ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-5 h-5 text-blue-600 transition-transform pointer-events-none ${mobileAccordion.anzscoDetails ? 'rotate-180' : ''}`} />
             </button>
             {mobileAccordion.anzscoDetails && (
               <div className="p-4 space-y-6">
