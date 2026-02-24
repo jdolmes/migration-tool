@@ -92,13 +92,13 @@ export default function LeadWidget({
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      {/* Minimized chat bubble - always visible when minimized */}
+    <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50">
+      {/* Minimized chat bubble - smaller on mobile */}
       <button
         onClick={handleExpand}
         className={`
           absolute bottom-0 right-0
-          w-14 h-14 rounded-full
+          w-12 h-12 md:w-14 md:h-14 rounded-full
           bg-gradient-to-r from-blue-600 to-indigo-600
           shadow-lg shadow-blue-500/30
           flex items-center justify-center
@@ -108,14 +108,14 @@ export default function LeadWidget({
         `}
         aria-label="Open chat"
       >
-        <MessageCircle className="w-6 h-6 text-white" />
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+        <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
+        <span className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full border-2 border-white" />
       </button>
 
-      {/* Full widget */}
+      {/* Full widget - responsive width */}
       <div
         className={`
-          w-[360px]
+          w-[calc(100vw-32px)] max-w-[360px] md:w-[360px]
           bg-white rounded-2xl
           shadow-2xl shadow-gray-300/50
           border border-gray-100

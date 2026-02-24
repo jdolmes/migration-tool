@@ -694,41 +694,51 @@ trackEvent('occupation_viewed', {
           <div className="space-y-6">
             {/* Eligible Visas Section */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200">
+              <div className="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 flex items-center justify-between">
                 <h2 className="text-lg font-bold text-green-800 flex items-center gap-2">
                   <Check className="w-5 h-5" />
                   Visas you may be eligible for
                 </h2>
+                {allVisaOptions.length > 0 && (
+                  <span className="bg-green-600 text-white text-sm font-bold px-3 py-1 rounded-full">
+                    {allVisaOptions.length}
+                  </span>
+                )}
               </div>
               <div className="p-6">
                 {allVisaOptions.length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="space-y-3">
                     {allVisaOptions.map((option, idx) => (
-                      <div key={idx} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between mb-3">
+                      <div key={idx} className="bg-white rounded-lg border-l-4 border-l-green-500 border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                        {/* Row 1: Badge + Name + Stream + Check */}
+                        <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-white text-sm bg-blue-600">
+                            <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-white text-sm bg-blue-600 min-w-[52px]">
                               {option.visa.subclass}
                             </span>
-                            <span className={`text-xs font-medium px-2 py-1 rounded ${
-                              option.visa.category === 'Permanent'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
-                              {option.visa.category}
-                            </span>
+                            <div>
+                              <span className="font-semibold text-gray-900">{option.visa.visa_name}</span>
+                              {option.visa.stream && (
+                                <span className="text-gray-500 text-sm ml-2">— {formatStreamName(option.visa.stream)}</span>
+                              )}
+                            </div>
                           </div>
-                          <span className="text-green-600">
+                          <span className="text-green-600 flex-shrink-0">
                             <Check className="w-5 h-5" />
                           </span>
                         </div>
-                        <h3 className="font-semibold text-gray-900 mb-1">{option.visa.visa_name}</h3>
-                        {option.visa.stream && (
-                          <p className="text-sm text-gray-500 mb-3">{formatStreamName(option.visa.stream)}</p>
-                        )}
-                        <div className="flex flex-wrap gap-2 mt-3">
+                        {/* Row 2: Category + List pills + LIN + Caveats */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                            option.visa.category === 'Permanent'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {option.visa.category}
+                          </span>
+                          <span className="text-gray-300">|</span>
                           {getApplicableLists(option).map(list => (
-                            <span key={list} className="text-xs font-medium px-2 py-1 rounded bg-blue-100 text-blue-700">
+                            <span key={list} className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
                               {list}
                             </span>
                           ))}
@@ -746,7 +756,7 @@ trackEvent('occupation_viewed', {
                                   eligibility: 'eligible'
                                 }
                               })}
-                              className="text-xs font-medium px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition-colors flex items-center gap-1"
+                              className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors inline-flex items-center gap-1"
                             >
                               LIN <ExternalLink className="w-3 h-3" />
                             </a>
@@ -768,7 +778,7 @@ trackEvent('occupation_viewed', {
                                   content: rules?.infoText || ''
                                 })
                               }}
-                              className="text-xs font-medium px-2 py-1 rounded bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors flex items-center gap-1"
+                              className="text-xs font-medium px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors inline-flex items-center gap-1"
                             >
                               Caveats <Info className="w-3 h-3" />
                             </button>
@@ -792,30 +802,39 @@ trackEvent('occupation_viewed', {
                   onClick={() => setShowIneligible(!showIneligible)}
                   className="w-full px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between hover:bg-gray-100 transition-colors"
                 >
-                  <h2 className="text-lg font-bold text-gray-600 flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-gray-500 flex items-center gap-2">
                     <X className="w-5 h-5" />
-                    Visas not available for this occupation ({ineligibleVisas.length})
+                    Not available for this occupation
                   </h2>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showIneligible ? 'rotate-180' : ''}`} />
+                  <div className="flex items-center gap-3">
+                    <span className="bg-gray-400 text-white text-sm font-bold px-3 py-1 rounded-full">
+                      {ineligibleVisas.length}
+                    </span>
+                    <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showIneligible ? 'rotate-180' : ''}`} />
+                  </div>
                 </button>
                 {showIneligible && (
                   <div className="p-6">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="space-y-3">
                       {ineligibleVisas.map((option, idx) => (
-                        <div key={idx} className="bg-gray-50 rounded-xl border border-gray-200 p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-white text-sm bg-gray-400">
-                              {option.visa.subclass}
-                            </span>
-                            <span className="text-red-500">
+                        <div key={idx} className="bg-gray-50 rounded-lg border-l-4 border-l-gray-400 border border-gray-200 p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg font-bold text-white text-sm bg-gray-400 min-w-[52px]">
+                                {option.visa.subclass}
+                              </span>
+                              <div>
+                                <span className="font-semibold text-gray-700">{option.visa.visa_name}</span>
+                                {option.visa.stream && (
+                                  <span className="text-gray-500 text-sm ml-2">— {formatStreamName(option.visa.stream)}</span>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-red-500 flex-shrink-0">
                               <X className="w-5 h-5" />
                             </span>
                           </div>
-                          <h3 className="font-semibold text-gray-700 mb-1">{option.visa.visa_name}</h3>
-                          {option.visa.stream && (
-                            <p className="text-sm text-gray-500 mb-2">{formatStreamName(option.visa.stream)}</p>
-                          )}
-                          <p className="text-xs text-red-600 mt-2">
+                          <p className="text-sm text-red-600 mt-2 ml-16 italic">
                             {option.eligibility_reason || 'Not on required occupation list'}
                           </p>
                         </div>
@@ -825,6 +844,37 @@ trackEvent('occupation_viewed', {
                 )}
               </div>
             )}
+
+            {/* Legend */}
+            <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Legend</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs text-gray-600">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">MLTSSL</span>
+                  <span>Medium and Long-term Strategic Skills List</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">STSOL</span>
+                  <span>Short-term Skilled Occupation List</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">ROL</span>
+                  <span>Regional Occupation List</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">CSOL</span>
+                  <span>Core Skills Occupation List</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">LIN</span>
+                  <span>Legislative Instrument (official list)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Caveats</span>
+                  <span>Special conditions or requirements</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1028,12 +1078,12 @@ trackEvent('occupation_viewed', {
       </div>
 
       {/* Mobile Accordion Layout - Hidden on desktop */}
-      <div className="md:hidden px-4 py-6 space-y-4">
+      <div className="md:hidden px-4 py-6 pb-24 space-y-4">
         {/* Visa Options Accordion */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <button
             onClick={() => toggleMobileAccordion('visaOptions')}
-            className="w-full px-4 py-4 flex items-center justify-between bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200"
+            className="w-full px-4 py-4 min-h-[56px] flex items-center justify-between bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200"
           >
             <span className="font-bold text-green-800 flex items-center gap-2">
               <Check className="w-5 h-5" />
@@ -1134,7 +1184,7 @@ trackEvent('occupation_viewed', {
                 <div className="pt-4 border-t border-gray-200">
                   <button
                     onClick={() => setShowIneligible(!showIneligible)}
-                    className="w-full flex items-center justify-between text-sm font-semibold text-gray-600 mb-3"
+                    className="w-full py-3 min-h-[44px] flex items-center justify-between text-sm font-semibold text-gray-600 mb-3"
                   >
                     <span className="flex items-center gap-2">
                       <X className="w-4 h-4" />
@@ -1176,7 +1226,7 @@ trackEvent('occupation_viewed', {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <button
               onClick={() => toggleMobileAccordion('anzscoDetails')}
-              className="w-full px-4 py-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200"
+              className="w-full px-4 py-4 min-h-[56px] flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200"
             >
               <span className="font-bold text-blue-800 flex items-center gap-2">
                 <Info className="w-5 h-5" />
