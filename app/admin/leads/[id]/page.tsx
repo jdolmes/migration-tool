@@ -117,121 +117,217 @@ export default function LeadDetailPage() {
   const [realIntentScore, setRealIntentScore] = useState<number | null>(null)
   const [occupationNames, setOccupationNames] = useState<Record<string, string>>({})
   const [expandedOccupations, setExpandedOccupations] = useState<Set<string>>(new Set())
+  const [expandedRepeatViews, setExpandedRepeatViews] = useState<Set<string>>(new Set())
+  const [showNoiseForSession, setShowNoiseForSession] = useState<Set<number>>(new Set())
 
-  // Process journey events into nested timeline structure
+  // Process journey events into session-based timeline structure
   type SubAction = {
     type: 'anzsco_details' | 'lin_clicked' | 'info_clicked'
     event: AnalyticsEvent
   }
 
   type TimelineItem =
-    | { type: 'search'; event: AnalyticsEvent }
+    | { type: 'search'; event: AnalyticsEvent; isNoise?: boolean }
     | {
         type: 'occupation'
         code: string
-        viewCount: number
-        firstTimestamp: string
+        event: AnalyticsEvent
+        isFirstView: boolean
         subActions: SubAction[]
       }
+    | { type: 'repeat_views'; code: string; count: number; events: AnalyticsEvent[] }
+    | { type: 'noise'; event: AnalyticsEvent; reason: string }
 
-  const processedTimeline = useMemo((): TimelineItem[] => {
+  type Session = {
+    sessionNumber: number
+    startTime: string
+    gapFromPrevious: number | null // milliseconds
+    items: TimelineItem[]
+    noiseItems: TimelineItem[]
+  }
+
+  const processedSessions = useMemo((): Session[] => {
     if (journey.length === 0) return []
 
-    const items: TimelineItem[] = []
+    const SESSION_GAP_MS = 30 * 60 * 1000 // 30 minutes
 
-    // First pass: collect all occupation views and their sub-actions
-    const occupationData: Record<string, {
-      viewCount: number
-      firstTimestamp: string
-      subActions: SubAction[]
-      hasAnzscoDetails: boolean
-    }> = {}
+    // First, identify partial searches (where a longer search immediately follows)
+    const partialSearchIndices = new Set<number>()
+    for (let i = 0; i < journey.length - 1; i++) {
+      const current = journey[i]
+      const next = journey[i + 1]
+      if (
+        current.event_type === 'search_performed' &&
+        next.event_type === 'search_performed' &&
+        current.search_term &&
+        next.search_term &&
+        next.search_term.toLowerCase().startsWith(current.search_term.toLowerCase()) &&
+        next.search_term.length > current.search_term.length
+      ) {
+        partialSearchIndices.add(i)
+      }
+    }
 
-    // Track current occupation context for events that might not have occupation_code
-    let currentOccupation: string | null = null
+    // Split events into sessions based on time gaps, storing events with each session
+    type RawSession = {
+      startTime: string
+      events: { event: AnalyticsEvent; originalIndex: number }[]
+    }
+    const rawSessions: RawSession[] = []
+    let currentSession: RawSession | null = null
 
-    for (const event of journey) {
-      // Update current occupation context when viewing an occupation
-      if (event.event_type === 'occupation_viewed' && event.occupation_code) {
-        currentOccupation = event.occupation_code
+    for (let i = 0; i < journey.length; i++) {
+      const event = journey[i]
+      const prevEvent = i > 0 ? journey[i - 1] : null
 
-        if (!occupationData[event.occupation_code]) {
-          occupationData[event.occupation_code] = {
-            viewCount: 0,
-            firstTimestamp: event.created_at,
-            subActions: [],
-            hasAnzscoDetails: false,
-          }
+      const shouldStartNewSession = !currentSession || (
+        prevEvent &&
+        new Date(event.created_at).getTime() - new Date(prevEvent.created_at).getTime() >= SESSION_GAP_MS
+      )
+
+      if (shouldStartNewSession) {
+        if (currentSession) {
+          rawSessions.push(currentSession)
         }
-        occupationData[event.occupation_code].viewCount++
+        currentSession = {
+          startTime: event.created_at,
+          events: [],
+        }
       }
 
-      // Collect sub-actions for occupations
-      const occupationCode = event.occupation_code || currentOccupation
+      currentSession!.events.push({ event, originalIndex: i })
+    }
 
-      if (occupationCode && occupationData[occupationCode]) {
-        // tab_switched to anzsco-details (show once per occupation)
+    // Push the last session
+    if (currentSession && currentSession.events.length > 0) {
+      rawSessions.push(currentSession)
+    }
+
+    // Now process each session's events into timeline items
+    const sessions: Session[] = rawSessions.map((rawSession, sessionIdx) => {
+      const session: Session = {
+        sessionNumber: sessionIdx + 1,
+        startTime: rawSession.startTime,
+        gapFromPrevious: sessionIdx > 0
+          ? new Date(rawSession.startTime).getTime() - new Date(rawSessions[sessionIdx - 1].startTime).getTime()
+          : null,
+        items: [],
+        noiseItems: [],
+      }
+
+      const seenOccupationsInSession = new Set<string>()
+      const repeatViewsMap: Record<string, AnalyticsEvent[]> = {}
+      let currentOccupation: string | null = null
+
+      // First pass: collect sub-actions per occupation
+      const occupationSubActions: Record<string, SubAction[]> = {}
+      const occupationHasAnzscoDetails: Record<string, boolean> = {}
+
+      for (const { event } of rawSession.events) {
+        if (event.event_type === 'occupation_viewed' && event.occupation_code) {
+          currentOccupation = event.occupation_code
+          if (!occupationSubActions[event.occupation_code]) {
+            occupationSubActions[event.occupation_code] = []
+            occupationHasAnzscoDetails[event.occupation_code] = false
+          }
+        }
+
+        const occupationCode = event.occupation_code || currentOccupation
+        if (occupationCode && occupationSubActions[occupationCode]) {
+          if (event.event_type === 'tab_switched') {
+            const tabId = event.metadata?.to || event.metadata?.tab
+            if (tabId === 'anzsco-details' && !occupationHasAnzscoDetails[occupationCode]) {
+              occupationHasAnzscoDetails[occupationCode] = true
+              occupationSubActions[occupationCode].push({ type: 'anzsco_details', event })
+            }
+          }
+          if (event.event_type === 'lin_clicked') {
+            occupationSubActions[occupationCode].push({ type: 'lin_clicked', event })
+          }
+          if (event.event_type === 'info_button_clicked') {
+            occupationSubActions[occupationCode].push({ type: 'info_clicked', event })
+          }
+        }
+      }
+
+      // Reset for second pass
+      currentOccupation = null
+
+      // Second pass: build timeline items
+      for (const { event, originalIndex } of rawSession.events) {
+        // Handle search events
+        if (event.event_type === 'search_performed') {
+          if (partialSearchIndices.has(originalIndex)) {
+            session.noiseItems.push({
+              type: 'noise',
+              event,
+              reason: 'Partial search',
+            })
+          } else {
+            session.items.push({ type: 'search', event })
+          }
+          continue
+        }
+
+        // Handle occupation views
+        if (event.event_type === 'occupation_viewed' && event.occupation_code) {
+          currentOccupation = event.occupation_code
+
+          if (!seenOccupationsInSession.has(event.occupation_code)) {
+            // First view in this session
+            seenOccupationsInSession.add(event.occupation_code)
+            session.items.push({
+              type: 'occupation',
+              code: event.occupation_code,
+              event,
+              isFirstView: true,
+              subActions: occupationSubActions[event.occupation_code] || [],
+            })
+          } else {
+            // Repeat view - collect for grouping
+            if (!repeatViewsMap[event.occupation_code]) {
+              repeatViewsMap[event.occupation_code] = []
+            }
+            repeatViewsMap[event.occupation_code].push(event)
+          }
+          continue
+        }
+
+        // Handle tab switches to visa-options (noise)
         if (event.event_type === 'tab_switched') {
           const tabId = event.metadata?.to || event.metadata?.tab
-          if (tabId === 'anzsco-details' && !occupationData[occupationCode].hasAnzscoDetails) {
-            occupationData[occupationCode].hasAnzscoDetails = true
-            occupationData[occupationCode].subActions.push({
-              type: 'anzsco_details',
+          if (tabId === 'visa-options') {
+            session.noiseItems.push({
+              type: 'noise',
               event,
+              reason: 'Default tab switch',
             })
           }
-          // Skip visa-options tab switches entirely
+          continue
         }
 
-        // lin_clicked
-        if (event.event_type === 'lin_clicked') {
-          occupationData[occupationCode].subActions.push({
-            type: 'lin_clicked',
-            event,
-          })
-        }
+        // Other events are sub-actions or not shown
+      }
 
-        // info_button_clicked
-        if (event.event_type === 'info_button_clicked') {
-          occupationData[occupationCode].subActions.push({
-            type: 'info_clicked',
-            event,
+      // Add repeat view groups after first view of each occupation
+      const finalItems: TimelineItem[] = []
+      for (const item of session.items) {
+        finalItems.push(item)
+        if (item.type === 'occupation' && repeatViewsMap[item.code]) {
+          finalItems.push({
+            type: 'repeat_views',
+            code: item.code,
+            count: repeatViewsMap[item.code].length,
+            events: repeatViewsMap[item.code],
           })
         }
       }
-    }
+      session.items = finalItems
 
-    // Second pass: build timeline in chronological order
-    const addedOccupations = new Set<string>()
+      return session
+    })
 
-    for (const event of journey) {
-      // Search events are top-level
-      if (event.event_type === 'search_performed') {
-        items.push({ type: 'search', event })
-        continue
-      }
-
-      // Occupation viewed - add as top-level with nested sub-actions
-      if (event.event_type === 'occupation_viewed' && event.occupation_code) {
-        if (!addedOccupations.has(event.occupation_code)) {
-          addedOccupations.add(event.occupation_code)
-          const data = occupationData[event.occupation_code]
-          items.push({
-            type: 'occupation',
-            code: event.occupation_code,
-            viewCount: data.viewCount,
-            firstTimestamp: data.firstTimestamp,
-            subActions: data.subActions,
-          })
-        }
-        continue
-      }
-
-      // Skip all other events - they're either nested under occupations or hidden
-      // (related_occupation_clicked, tab_switched, lin_clicked, info_button_clicked)
-    }
-
-    return items
+    return sessions
   }, [journey])
 
   const toggleOccupationExpand = (code: string) => {
@@ -244,6 +340,53 @@ export default function LeadDetailPage() {
       }
       return next
     })
+  }
+
+  const toggleRepeatViews = (key: string) => {
+    setExpandedRepeatViews(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return next
+    })
+  }
+
+  const toggleSessionNoise = (sessionNumber: number) => {
+    setShowNoiseForSession(prev => {
+      const next = new Set(prev)
+      if (next.has(sessionNumber)) {
+        next.delete(sessionNumber)
+      } else {
+        next.add(sessionNumber)
+      }
+      return next
+    })
+  }
+
+  const formatTimeGap = (ms: number): string => {
+    const minutes = Math.floor(ms / 60000)
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+
+    if (hours > 0) {
+      return `${hours} hour${hours !== 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''} later`
+    }
+    return `${minutes} minute${minutes !== 1 ? 's' : ''} later`
+  }
+
+  const formatSessionTime = (timestamp: string): string => {
+    const date = new Date(timestamp)
+    return date.toLocaleDateString('en-AU', {
+      day: 'numeric',
+      month: 'short',
+    }) + ', ' + date.toLocaleTimeString('en-AU', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).toLowerCase()
   }
 
   useEffect(() => {
@@ -616,155 +759,215 @@ export default function LeadDetailPage() {
                 </p>
               </div>
             ) : (
-              <div className="relative">
-                {/* Timeline line */}
-                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+              <div className="space-y-6">
+                {processedSessions.map((session, sessionIndex) => (
+                  <div key={session.sessionNumber}>
+                    {/* Session Header */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex-1 h-px bg-gray-200" />
+                      <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+                        Session {session.sessionNumber} — {formatSessionTime(session.startTime)}
+                      </span>
+                      <div className="flex-1 h-px bg-gray-200" />
+                    </div>
 
-                <div className="space-y-3">
-                  {processedTimeline.map((item, index) => {
-                    // Search event - top level
-                    if (item.type === 'search') {
-                      return (
-                        <div key={item.event.id} className="relative flex gap-4 pl-2">
-                          <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                            <div className="w-2 h-2 rounded-full bg-gray-400" />
-                          </div>
-                          <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 mb-1">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-sm">🔍</span>
-                                <span className="text-sm font-medium text-gray-800">
-                                  Searched for occupation
-                                </span>
-                              </div>
-                              <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
-                                {formatDateTime(item.event.created_at)}
-                              </span>
-                            </div>
-                            {item.event.search_term && (
-                              <p className="text-xs text-gray-600 mt-0.5 ml-5">
-                                "{item.event.search_term}"
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    }
+                    {/* Time gap from previous session */}
+                    {session.gapFromPrevious && (
+                      <p className="text-xs text-gray-400 italic text-center mb-3 -mt-1">
+                        {formatTimeGap(session.gapFromPrevious)}
+                      </p>
+                    )}
 
-                    // Occupation event - top level with nested sub-actions
-                    if (item.type === 'occupation') {
-                      const hasSubActions = item.subActions.length > 0
-                      const isExpandable = item.viewCount > 1 || hasSubActions
-                      const isExpanded = expandedOccupations.has(item.code)
-                      const name = occupationNames[item.code]
-                      const displayName = name
-                        ? `${name} (${item.code})`
-                        : `ANZSCO ${item.code}`
-
-                      return (
-                        <div key={`occupation-${item.code}`}>
-                          {/* Occupation card */}
-                          <div className="relative flex gap-4 pl-2">
-                            <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                              <div className="w-2 h-2 rounded-full bg-blue-500" />
-                            </div>
-                            <div
-                              className={`flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 mb-1 ${
-                                isExpandable ? 'cursor-pointer hover:bg-blue-100 transition-colors' : ''
-                              }`}
-                              onClick={isExpandable ? () => toggleOccupationExpand(item.code) : undefined}
-                            >
+                    {/* Session Items */}
+                    <div className="space-y-2">
+                      {session.items.map((item, itemIndex) => {
+                        // Search event
+                        if (item.type === 'search') {
+                          return (
+                            <div key={item.event.id} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-sm">👁️</span>
+                                  <span className="text-sm">🔍</span>
                                   <span className="text-sm font-medium text-gray-800">
-                                    Viewed {displayName}
+                                    Searched
                                   </span>
-                                  {item.viewCount > 1 && (
-                                    <span className="text-xs bg-blue-200 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">
-                                      ×{item.viewCount}
+                                  {item.event.search_term && (
+                                    <span className="text-sm text-gray-600">
+                                      "{item.event.search_term}"
                                     </span>
-                                  )}
-                                  {isExpandable && (
-                                    <ChevronDown
-                                      className={`w-4 h-4 text-gray-400 transition-transform ${
-                                        isExpanded ? 'rotate-180' : ''
-                                      }`}
-                                    />
                                   )}
                                 </div>
                                 <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
-                                  {formatDateTime(item.firstTimestamp)}
+                                  {formatDateTime(item.event.created_at)}
                                 </span>
                               </div>
                             </div>
-                          </div>
+                          )
+                        }
 
-                          {/* Nested sub-actions */}
-                          {isExpanded && hasSubActions && (
-                            <div className="ml-8 pl-4 border-l-2 border-blue-200 space-y-1.5 mt-1 mb-2">
-                              {item.subActions.map((subAction) => {
-                                let icon = '📄'
-                                let label = ''
+                        // Occupation view (first view in session)
+                        if (item.type === 'occupation') {
+                          const hasSubActions = item.subActions.length > 0
+                          const isExpanded = expandedOccupations.has(`${session.sessionNumber}-${item.code}`)
+                          const name = occupationNames[item.code]
+                          const displayName = name
+                            ? `${name} (${item.code})`
+                            : `ANZSCO ${item.code}`
 
-                                if (subAction.type === 'anzsco_details') {
-                                  icon = '🗂️'
-                                  label = 'Switched to ANZSCO Details'
-                                } else if (subAction.type === 'lin_clicked') {
-                                  icon = '📄'
-                                  const visa = subAction.event.visa_subclass
-                                  const stream = subAction.event.visa_stream
-                                  label = visa
-                                    ? `Clicked LIN — Visa ${visa}${stream ? ` (${stream})` : ''}`
-                                    : 'Clicked LIN'
-                                } else if (subAction.type === 'info_clicked') {
-                                  icon = 'ℹ️'
-                                  const visa = subAction.event.visa_subclass
-                                  label = visa ? `Clicked visa info — Visa ${visa}` : 'Clicked visa info'
-                                }
-
-                                return (
-                                  <div
-                                    key={subAction.event.id}
-                                    className="flex items-center justify-between text-xs py-1.5 px-2 rounded bg-white border border-gray-100"
-                                  >
-                                    <span className="flex items-center gap-1.5 text-gray-600">
-                                      <span>{icon}</span>
-                                      {label}
+                          return (
+                            <div key={`occ-${session.sessionNumber}-${item.code}`}>
+                              <div
+                                className={`rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 ${
+                                  hasSubActions ? 'cursor-pointer hover:bg-blue-100 transition-colors' : ''
+                                }`}
+                                onClick={hasSubActions ? () => toggleOccupationExpand(`${session.sessionNumber}-${item.code}`) : undefined}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-sm">👁️</span>
+                                    <span className="text-sm font-medium text-gray-800">
+                                      Viewed {displayName}
                                     </span>
-                                    <span className="text-gray-400">
-                                      {formatDateTime(subAction.event.created_at)}
-                                    </span>
+                                    {hasSubActions && (
+                                      <ChevronDown
+                                        className={`w-4 h-4 text-gray-400 transition-transform ${
+                                          isExpanded ? 'rotate-180' : ''
+                                        }`}
+                                      />
+                                    )}
                                   </div>
-                                )
+                                  <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                                    {formatDateTime(item.event.created_at)}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Nested sub-actions */}
+                              {isExpanded && hasSubActions && (
+                                <div className="ml-4 pl-3 border-l-2 border-blue-200 space-y-1.5 mt-1.5 mb-1">
+                                  {item.subActions.map((subAction) => {
+                                    let icon = '📄'
+                                    let label = ''
+                                    let isHighIntent = false
+
+                                    if (subAction.type === 'anzsco_details') {
+                                      icon = '🗂️'
+                                      label = 'Switched to ANZSCO Details'
+                                    } else if (subAction.type === 'lin_clicked') {
+                                      icon = '📄'
+                                      isHighIntent = true
+                                      const visa = subAction.event.visa_subclass
+                                      const stream = subAction.event.visa_stream
+                                      label = visa
+                                        ? `Clicked LIN — Visa ${visa}${stream ? ` (${stream})` : ''}`
+                                        : 'Clicked LIN'
+                                    } else if (subAction.type === 'info_clicked') {
+                                      icon = 'ℹ️'
+                                      const visa = subAction.event.visa_subclass
+                                      label = visa ? `Clicked visa info — Visa ${visa}` : 'Clicked visa info'
+                                    }
+
+                                    return (
+                                      <div
+                                        key={subAction.event.id}
+                                        className={`flex items-center justify-between text-xs py-1.5 px-2 rounded ${
+                                          isHighIntent
+                                            ? 'bg-purple-50 border border-purple-200'
+                                            : 'bg-white border border-gray-100'
+                                        }`}
+                                      >
+                                        <span className={`flex items-center gap-1.5 ${isHighIntent ? 'text-purple-700 font-medium' : 'text-gray-600'}`}>
+                                          <span>{icon}</span>
+                                          {label}
+                                        </span>
+                                        <span className="text-gray-400">
+                                          {formatDateTime(subAction.event.created_at)}
+                                        </span>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        }
+
+                        // Repeat views (collapsible)
+                        if (item.type === 'repeat_views') {
+                          const repeatKey = `${session.sessionNumber}-${item.code}-repeat`
+                          const isExpanded = expandedRepeatViews.has(repeatKey)
+                          const name = occupationNames[item.code]
+
+                          return (
+                            <div key={repeatKey} className="ml-4">
+                              <button
+                                onClick={() => toggleRepeatViews(repeatKey)}
+                                className="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
+                              >
+                                <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                viewed again {item.count} time{item.count !== 1 ? 's' : ''}
+                              </button>
+                              {isExpanded && (
+                                <div className="mt-1.5 space-y-1 pl-4 border-l border-gray-200">
+                                  {item.events.map((event) => (
+                                    <div key={event.id} className="text-xs text-gray-400 py-1">
+                                      Viewed {name || `ANZSCO ${item.code}`} — {formatDateTime(event.created_at)}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        }
+
+                        return null
+                      })}
+
+                      {/* Noise toggle */}
+                      {session.noiseItems.length > 0 && (
+                        <div className="mt-2">
+                          <button
+                            onClick={() => toggleSessionNoise(session.sessionNumber)}
+                            className="text-xs text-gray-400 hover:text-gray-500 transition-colors"
+                          >
+                            {showNoiseForSession.has(session.sessionNumber)
+                              ? '− hide noise'
+                              : `+ show noise (${session.noiseItems.length})`}
+                          </button>
+                          {showNoiseForSession.has(session.sessionNumber) && (
+                            <div className="mt-1.5 space-y-1 pl-2 border-l border-gray-100">
+                              {session.noiseItems.map((noiseItem) => {
+                                if (noiseItem.type === 'noise') {
+                                  return (
+                                    <div key={noiseItem.event.id} className="text-xs text-gray-400 py-0.5">
+                                      <span className="text-gray-300">{noiseItem.reason}:</span>{' '}
+                                      {noiseItem.event.search_term && `"${noiseItem.event.search_term}"`}
+                                      {noiseItem.event.event_type === 'tab_switched' && 'switched to visa-options'}
+                                    </div>
+                                  )
+                                }
+                                return null
                               })}
                             </div>
                           )}
                         </div>
-                      )
-                    }
-
-                    return null
-                  })}
-
-                  {/* Final dot - form submitted */}
-                  <div className="relative flex gap-4 pl-2">
-                    <div className="relative z-10 flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                      <div className="w-3 h-3 rounded-full bg-green-500 ring-2 ring-green-200" />
+                      )}
                     </div>
-                    <div className="flex-1 rounded-lg border border-green-200 bg-green-50 px-3 py-2 mb-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm">✅</span>
-                          <span className="text-sm font-medium text-green-800">
-                            Submitted consultation request
-                          </span>
-                        </div>
-                        <span className="text-xs text-gray-400 whitespace-nowrap">
-                          {formatDateTime(lead.created_at)}
-                        </span>
-                      </div>
+                  </div>
+                ))}
+
+                {/* Final event - form submitted */}
+                <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm">✅</span>
+                      <span className="text-sm font-medium text-green-800">
+                        Submitted consultation request
+                      </span>
                     </div>
+                    <span className="text-xs text-gray-400 whitespace-nowrap">
+                      {formatDateTime(lead.created_at)}
+                    </span>
                   </div>
                 </div>
               </div>
