@@ -24,7 +24,7 @@ export default function PrivacyPolicyPage() {
         <div className="prose prose-gray max-w-none">
           {/* Introduction */}
           <p className="text-gray-700 leading-relaxed">
-            Australia Migration Hub is a free tool that helps you check if your occupation qualifies
+            SkillIndex is a free tool that helps you check if your occupation qualifies
             for Australian skilled migration visas. We believe in being upfront about how we handle
             your information, so here&apos;s the straightforward version of our privacy practices.
           </p>
@@ -192,7 +192,7 @@ export default function PrivacyPolicyPage() {
             href="/"
             className="text-blue-600 hover:text-blue-700 text-sm font-medium"
           >
-            Return to Australia Migration Hub
+            Return to SkillIndex
           </Link>
         </div>
       </div>
