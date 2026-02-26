@@ -1,7 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+
+// Set to false to enable the page
+const PAGE_HIDDEN = true
 
 interface NewsArticle {
   id: string
@@ -19,11 +23,19 @@ interface NewsArticle {
 const PAGE_SIZE = 50
 
 export default function MigrationNewsPage() {
+  const router = useRouter()
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Redirect to homepage if page is hidden
+  useEffect(() => {
+    if (PAGE_HIDDEN) {
+      router.replace('/')
+    }
+  }, [router])
 
   const fetchArticles = async (cursor?: string) => {
     try {
@@ -54,6 +66,7 @@ export default function MigrationNewsPage() {
   }
 
   useEffect(() => {
+    if (PAGE_HIDDEN) return
     const loadInitial = async () => {
       setIsLoading(true)
       setError(null)
@@ -96,6 +109,11 @@ export default function MigrationNewsPage() {
       month: 'short',
       year: 'numeric',
     })
+  }
+
+  // Return null while redirecting
+  if (PAGE_HIDDEN) {
+    return null
   }
 
   return (
