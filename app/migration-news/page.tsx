@@ -42,6 +42,7 @@ export default function MigrationNewsPage() {
       let query = supabase
         .from('news_articles')
         .select('*')
+        .eq('status', 'approved')
         .order('published_at', { ascending: false, nullsFirst: false })
         .limit(PAGE_SIZE + 1)
 

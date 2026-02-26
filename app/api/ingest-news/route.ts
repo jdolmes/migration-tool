@@ -6,7 +6,28 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-const KEYWORDS = {
+// Only save articles containing at least one of these (case insensitive)
+const INCLUDE_KEYWORDS = [
+  'visa', 'migration agent', 'RMA', 'MARA', 'subclass', 'skilled migration',
+  'occupation list', 'legislative instrument', 'LIN', 'determination',
+  'skilled occupation', 'points test', 'EOI', 'SkillSelect', 'invitation round',
+  '482', '186', '189', '190', '491', '494', '485', 'ANZSCO', 'MLTSSL', 'STSOL',
+  'CSOL', 'skills assessment', 'TRA', 'VETASSESS', 'Engineers Australia',
+  'processing time', 'visa backlog', 'nomination', 'employer sponsored',
+  'permanent residency', 'work rights', 'bridging visa', 'Home Affairs',
+  'migration program', 'migration intake', 'CPD', 'registered migration',
+  'visa subclass', 'skilled worker', 'temporary visa', 'migration legislation',
+  'immigration policy', 'visa processing', 'migration regulation',
+]
+
+// Discard articles where title contains any of these (even if they passed include filter)
+const EXCLUDE_KEYWORDS = [
+  'One Nation', 'Pauline Hanson', 'Nigel Farage', 'ISIS', 'Syria', 'Roj camp',
+  'asylum seeker', 'refugee camp', 'capital gains', 'commentisfree',
+  'fake immigration', 'far right', 'Islamic country',
+]
+
+const TAG_KEYWORDS = {
   '482': ['482', 'tss', 'temporary skill shortage'],
   'student': ['student', 'student visa', '500'],
   'partner': ['partner', 'spouse', '820', '801', '309', '100'],
@@ -37,13 +58,23 @@ function extractTags(title: string, content: string): string[] {
   const text = `${title} ${content}`.toLowerCase()
   const tags: string[] = []
 
-  for (const [tag, keywords] of Object.entries(KEYWORDS)) {
+  for (const [tag, keywords] of Object.entries(TAG_KEYWORDS)) {
     if (keywords.some(keyword => text.includes(keyword))) {
       tags.push(tag)
     }
   }
 
   return tags
+}
+
+function shouldIncludeArticle(title: string, snippet: string): boolean {
+  const text = `${title} ${snippet}`.toLowerCase()
+  return INCLUDE_KEYWORDS.some(keyword => text.includes(keyword.toLowerCase()))
+}
+
+function shouldExcludeArticle(title: string): boolean {
+  const titleLower = title.toLowerCase()
+  return EXCLUDE_KEYWORDS.some(keyword => titleLower.includes(keyword.toLowerCase()))
 }
 
 function parseDate(dateStr: string | undefined): string | null {
@@ -132,6 +163,7 @@ export async function GET(request: Request) {
     feeds_processed: 0,
     items_found: 0,
     items_inserted: 0,
+    items_skipped: 0,
     errors: [] as string[],
   }
 
@@ -169,8 +201,20 @@ export async function GET(request: Request) {
         result.feeds_processed++
         result.items_found += articles.length
 
-        // Upsert articles
+        // Filter and upsert articles
         for (const article of articles) {
+          // Check exclude list first (on title only)
+          if (shouldExcludeArticle(article.title)) {
+            result.items_skipped++
+            continue
+          }
+
+          // Check include list (on title and snippet)
+          if (!shouldIncludeArticle(article.title, article.snippet)) {
+            result.items_skipped++
+            continue
+          }
+
           const { error: upsertError } = await supabase
             .from('news_articles')
             .upsert(

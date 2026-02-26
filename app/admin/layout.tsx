@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Users, Settings, LogOut, LayoutDashboard } from 'lucide-react'
+import { Users, Settings, LogOut, LayoutDashboard, Newspaper } from 'lucide-react'
 
 export default function AdminLayout({
   children,
@@ -55,6 +55,14 @@ export default function AdminLayout({
               >
                 <Users className="w-4 h-4" />
                 <span className="font-medium">Leads</span>
+              </Link>
+
+              <Link
+                href="/admin/news"
+                className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                <Newspaper className="w-4 h-4" />
+                <span className="font-medium">News</span>
               </Link>
 
               <Link
