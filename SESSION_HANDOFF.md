@@ -1,167 +1,230 @@
-# Migration Tool Project - Session Handoff Document
-**Last Updated:** February 11, 2026
-**Status:** Active Development - UI Modernization Complete, Data Import Ongoing
+# SkillIndex - Session Handoff Document
+**Last Updated:** February 26, 2026
+**Status:** Phase 4 IN PROGRESS 🚧 — Migration News feature being built
 
 ---
 
 ## 🎯 PROJECT OVERVIEW
 
-**Project Name:** Australian Migration Hub / ANZSCO Occupation Search Tool
-**Tech Stack:** Next.js 16, TypeScript, Tailwind CSS, Supabase (PostgreSQL), Vercel
-**Live URL:** [Your production URL]
+**Project Name:** SkillIndex
+**Live URL:** https://skillindexau.com
+**Tech Stack:** Next.js 15, TypeScript, Tailwind CSS, Supabase (PostgreSQL), Vercel
 **GitHub:** https://github.com/jdolmes/migration-tool
+**Local Dev:** cd ~/Projects/migration-tool-frontend && npm run dev
+**Admin Dashboard:** /admin/login (password: in .env.local)
+**Business:** Silaga Migration Advisory (Frank, MARN 2619271)
 
-**Purpose:** 
-Help people find visa-eligible occupations in Australia by searching ANZSCO (Australian and New Zealand Standard Classification of Occupations) codes and checking which visas they qualify for.
+---
+
+## 🚀 WHAT'S DEPLOYED
+
+### Phase 1: Analytics System ✅ (Feb 14)
+- Full behavioral tracking (6 event types)
+- Session-based analytics
+- Geographic insights
+- High-intent signal detection
+
+### Phase 2: Lead Generation ✅ (Feb 15)
+- Always-visible chat widget (bottom-right)
+- Auto-expand after 2 minutes
+- Full lead qualification form
+- Supabase database integration
+- Calendly instant booking (URL needs updating)
+- Privacy compliance
+
+### Phase 3: RMA Dashboard ✅ (Feb 17)
+- Secure admin authentication
+- Lead inbox with status tabs
+- Lead detail with research journey timeline
+- Session-grouped timeline (30-min gap = new session)
+- Timestamped comments system
+- Real intent scoring
+- Research summary with analytics
+
+### Phase 4: UI & Navigation ✅ (Feb 24-25)
+- SkillIndex logo (public/skillindex-logo.png) in navbar
+- BETA badge beside logo
+- Full navbar with Coming Soon pages:
+  - /migration-news (hidden, PAGE_HIDDEN = true — in progress)
+  - /points-calculator (Coming Soon)
+  - /visas (Coming Soon)
+- Mobile hamburger menu
+- Footer with Privacy Policy link
+- Privacy policy updated to SkillIndex branding
+- Research Journey timeline rebuilt (session grouping, noise collapsible)
+
+### Phase 4: Migration News ✅ (Feb 26 — backend deployed, tuning in progress)
+- news_feeds table (configurable RSS sources)
+- news_articles table (with status: pending/approved/rejected)
+- app/api/ingest-news/route.ts — RSS ingestion with keyword filtering
+- Two-list keyword filter (INCLUDE + EXCLUDE keywords)
+- vercel.json cron job (daily 06:00 UTC)
+- app/admin/news/page.tsx — admin review queue (approve/reject)
+- Public /migration-news page (shows approved articles only)
+- PAGE_HIDDEN = true (hidden from users while tuning)
 
 ---
 
 ## 📊 CURRENT STATUS
 
-### ✅ Completed Features:
+### ✅ All Systems Live:
+- Occupation search (3,261 ANZSCO occupations)
+- Visa eligibility checking (9,464 calculations)
+- Analytics tracking (6 event types)
+- Lead generation widget
+- Lead capture form
+- RMA Dashboard (login, inbox, detail)
+- Research journey timeline (session-grouped)
+- Real intent scoring
+- Navbar with logo + Coming Soon pages
+- Footer with privacy policy
+- Migration News backend (pending tuning)
 
-#### Core Functionality:
-1. **Search functionality** - Search by occupation code or name
-2. **Occupation detail pages** with tab navigation
-3. **Visa eligibility table** - Shows which visas each occupation qualifies for
-4. **Dual catalogue support** - v1.3 and v2022 ANZSCO versions
-5. **Dynamic related occupations** - Fetches occupations in same unit group
+### ⚠️ Needs Configuration (Pre-Launch Blockers):
+- Calendly URL (placeholder in components/lead-capture/LeadForm.tsx)
+- Contact email in app/privacy-policy/page.tsx (still australiamigrationhub@gmail.com)
+- ADMIN_PASSWORD — change before sharing with RMAs
+- Clear test leads from database
 
-#### UI/UX (NEW - Feb 11, 2026):
-**Modern Design System v1.3-1.4:**
-- Simple, elegant homepage with gradient text accent
-- Tab navigation (Visa Options default, ANZSCO Details secondary)
-- Vibrant gradients and modern color palette
-- Better spacing, typography, and visual hierarchy
-- Rounded rectangle badges, hover effects
-- Professional yet colorful aesthetic
-
-### 📈 Data Import Progress:
-**Completed Unit Groups:** 8 of ~120 (7% complete)
-**Total Occupations with Full Data:** 33 out of ~1,000
-
-**Completed:**
-- 1111, 2311, 2312, 2321, 2322, 2613, 2621, 3514
-
----
-
-## 🎨 DESIGN SYSTEM (v1.3-1.4)
-
-### Key Changes:
-- White background with gradient accents
-- Centered, minimal layout
-- Prominent search bar with visible border
-- Tab navigation with Visa Options as default
-- Colorful section markers (gradient indicators)
-- Generous spacing (px-8, py-6/8/10)
-
-### Color Palette:
-- Primary: Blue-Indigo-Purple gradients
-- Success: Green gradients (permanent visas)
-- Neutral: Gray gradients (temporary visas)
+### 🚧 Migration News — Active Work:
+- PAGE_HIDDEN = true (set to false when ready to launch)
+- Current active feed: Migration Alliance only
+- Keyword filter tuned but needs real-world testing
+- Admin review queue built and working
+- Next: Add Jobs and Skills Australia feed, tune keyword lists
+- To enable: change PAGE_HIDDEN = false in app/migration-news/page.tsx
 
 ---
 
-## 🗄️ DATABASE SCHEMA
+## 🗄️ DATABASE
 
-**Key Tables:**
-- `occupations` - Main table with ANZSCO data
-- `visas` - Visa subclasses
-- `visa_eligibility` - Occupation-visa mappings
-- `occupation_lists` - MLTSSL, STSOL, ROL, CSOL
-  - **IMPORTANT:** Column is `list_name` NOT `list_type`
+**Supabase:** https://supabase.com/dashboard/project/eulnvbopvqilqyvyiqux
 
-**Database:** https://supabase.com/dashboard/project/eulnvbopvqilqyvyiqux
+### Tables:
+- occupations (3,261 records)
+- visas (13 records)
+- occupation_lists (960 records)
+- visa_eligibility (9,464 records)
+- analytics_events (growing — 6 event types)
+- leads (growing — extended schema with comments JSONB)
+- lead_summaries (ready for future use)
+- news_feeds (configurable RSS sources)
+- news_articles (status: pending/approved/rejected)
 
----
+### Key Relationships:
+- leads.session_id === analytics_events.session_id (links lead to research journey)
+- news_articles.status controls public visibility (only 'approved' shown)
 
-## 📁 KEY FILES
+### Managing News Feeds:
+```sql
+-- View current feeds
+SELECT source_name, feed_url, is_active FROM news_feeds;
 
-- `app/page.tsx` - Homepage (v1.4 simple & elegant)
-- `app/occupation/[code]/page.tsx` - Occupation detail (v1.3 modern)
-- `components/search/SearchBar.tsx` - Search component (updated Feb 11)
-- `docs/SESSION_HANDOFF.md` - This file
-- `TODO.md` - Feature roadmap
+-- Add a feed
+INSERT INTO news_feeds (source_name, feed_url, is_active)
+VALUES ('Source Name', 'https://feed-url/rss', true);
 
----
+-- Disable a feed
+UPDATE news_feeds SET is_active = false WHERE source_name = 'Source Name';
 
-## 🔄 WORKFLOW: Adding Unit Groups
-
-1. Get ANZSCO data from ABS website
-2. Generate SQL with LLM prompt (see below)
-3. Run SQL in Supabase
-4. Verify and test
-5. Update tracker
-
-**Bulk Processing:** 3-5 unit groups at once = ~4 min per unit group
-
----
-
-## 🤖 LLM PROMPT
-
-```
-I need help processing ANZSCO unit group data and converting it to SQL for PostgreSQL.
-
-[Full prompt in original document]
-
-Important: 
-- Column is list_name NOT list_type
-- Escape quotes: it's → it''s
-- Use NULL for empty arrays
-- Special case: Different AU/NZ skill levels go in text field
+-- Delete a feed
+DELETE FROM news_feeds WHERE source_name = 'Source Name';
 ```
 
 ---
 
-## 🚀 DEPLOYMENT
+## 🎯 INTENT SCORING SYSTEM
 
-**Recent Deploy (Feb 11):**
-- Commit: e695226
-- Changes: UI redesign v1.3-1.4
-- Status: Live
+Scores calculated dynamically from analytics_events:
 
-```bash
-git add .
-git commit -m "message"
-git push
+| Signal | Points |
+|---|---|
+| Form submitted | +3 |
+| LIN click (each) | +2 |
+| Related occupation (each) | +2 |
+| ANZSCO Details tab | +2 |
+| 3+ occupations viewed | +2 |
+| 2 occupations viewed | +1 |
+| 15+ min research | +4 |
+| 10-15 min research | +2 |
+| 3-10 min research | +1 |
+| Timeline ASAP | +2 |
+| Timeline 6-12mo | +1 |
+| Onshore location | +1 |
+
+Thresholds: 15+=Very High | 10-14=High | 5-9=Medium | 1-4=Low
+
+---
+
+## 🔑 ENVIRONMENT VARIABLES
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://eulnvbopvqilqyvyiqux.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[in Vercel]
+SUPABASE_SERVICE_ROLE_KEY=[in Vercel — added Feb 26]
+ADMIN_PASSWORD=[in Vercel — change before RMA launch]
+CRON_SECRET=skillindex-cron-2026
 ```
 
 ---
 
-## 🎯 NEXT STEPS
+## 📋 NEXT PRIORITIES
 
-1. Continue importing unit groups (target: 50+ occupations)
-2. Priority: Tech, healthcare, engineering, trades occupations
-3. Future: Search improvements, filters, state nomination data
+### Before Showing to RMAs (Urgent):
+1. Update Calendly URL in components/lead-capture/LeadForm.tsx
+2. Add real contact email to app/privacy-policy/page.tsx
+3. Change ADMIN_PASSWORD to secure password
+4. Clear test leads from database
 
----
+### Migration News (Active):
+1. Add Jobs and Skills Australia feed: https://www.jobsandskills.gov.au/news_rss
+2. Continue tuning keyword filter (share missed articles with Claude for analysis)
+3. Review articles daily at /admin/news
+4. When quality is good — set PAGE_HIDDEN = false and push
 
-## 📊 METRICS (Feb 11, 2026)
-
-- Full data: 33 occupations / ~1,000 (3%)
-- Unit groups: 8 / ~120 (7%)
-- Frontend: 100% complete (modern UI)
-- Estimated time to complete: ~20 hours (bulk processing)
-
----
-
-## 💡 SESSION CONTINUITY
-
-**Starting a new conversation?**
-1. Upload this document
-2. Say: "I'm continuing work on the Australian Migration Hub. I've uploaded SESSION_HANDOFF.md. Can you help me continue?"
-3. Mention what you want to work on (data import OR UI changes)
+### Short Term:
+1. Calendly + Stripe integration ($150 AUD paid consultations)
+2. Email notifications for new leads (Resend)
+3. Find 1-2 beta RMA partners
 
 ---
 
-## 🔗 KEY LINKS
+## 🔑 QUICK REFERENCE
 
-- ABS ANZSCO: https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/2022
-- Anzscosearch (reference): https://anzscosearch.com/
+### Key URLs:
+- Live site: https://skillindexau.com
+- Admin: https://skillindexau.com/admin/login
+- Admin News Queue: https://skillindexau.com/admin/news
 - Supabase: https://supabase.com/dashboard/project/eulnvbopvqilqyvyiqux
+- Vercel: https://vercel.com/jdolmes-projects/migration-tool
 - GitHub: https://github.com/jdolmes/migration-tool
 
+### Key Files:
+- middleware.ts — Route protection (ROOT directory)
+- app/admin/login/page.tsx — Login form
+- app/admin/layout.tsx — Admin navigation
+- app/admin/leads/page.tsx — Lead inbox
+- app/admin/leads/[id]/page.tsx — Lead detail + research journey
+- app/admin/news/page.tsx — Migration news review queue
+- app/api/ingest-news/route.ts — RSS ingestion + keyword filter
+- app/migration-news/page.tsx — Public news page (PAGE_HIDDEN flag line 7)
+- vercel.json — Cron job config (daily 06:00 UTC)
+- lib/admin.ts — Admin queries and helpers
+- lib/analytics.ts — Event tracking
+- components/Navbar.tsx — Navigation with logo + Coming Soon flags
+- components/Footer.tsx — Footer with privacy policy link
+- components/lead-capture/LeadWidget.tsx — Chat bubble
+- components/lead-capture/LeadForm.tsx — Lead form (update Calendly URL)
+- public/skillindex-logo.png — SkillIndex logo
+
+### Triggering Manual News Ingestion:
+```bash
+curl -s "https://skillindexau.com/api/ingest-news" \
+  -H "Authorization: Bearer skillindex-cron-2026"
+```
+
 ---
 
-**END OF HANDOFF DOCUMENT**
-**Version: 2.0 (Feb 11, 2026) - Modern UI Edition 🚀**
+**Version: 7.0 (Feb 26, 2026)**
+**Status:** Platform live ✅ | Migration News backend deployed, tuning in progress 🚧
+**Next:** Pre-launch config + Migration News tuning + RMA outreach
