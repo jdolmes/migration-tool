@@ -254,22 +254,34 @@ export async function GET(request: Request) {
         result.feeds_processed++
         result.items_found += articles.length
 
-        // Filter and upsert articles
+        // Get all source URLs from this batch to check which already exist
+        const sourceUrls = articles.map(a => a.source_url)
+        const { data: existingArticles } = await supabase
+          .from('news_articles')
+          .select('source_url')
+          .in('source_url', sourceUrls)
+
+        const existingUrls = new Set(existingArticles?.map(a => a.source_url) || [])
+
+        // Filter and insert articles (only new ones)
         for (const article of articles) {
+          // Skip if article already exists (regardless of status)
+          if (existingUrls.has(article.source_url)) {
+            result.items_skipped++
+            continue
+          }
+
           // Whitelisted sources bypass keyword filter entirely
           if (feed.is_whitelisted) {
-            const { error: upsertError } = await supabase
+            const { error: insertError } = await supabase
               .from('news_articles')
-              .upsert(
-                {
-                  ...article,
-                  updated_at: new Date().toISOString(),
-                },
-                { onConflict: 'source_url' }
-              )
+              .insert({
+                ...article,
+                updated_at: new Date().toISOString(),
+              })
 
-            if (upsertError) {
-              result.errors.push(`Failed to upsert article: ${upsertError.message}`)
+            if (insertError) {
+              result.errors.push(`Failed to insert article: ${insertError.message}`)
             } else {
               result.items_inserted++
               result.items_whitelisted++
@@ -289,18 +301,15 @@ export async function GET(request: Request) {
             continue
           }
 
-          const { error: upsertError } = await supabase
+          const { error: insertError } = await supabase
             .from('news_articles')
-            .upsert(
-              {
-                ...article,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'source_url' }
-            )
+            .insert({
+              ...article,
+              updated_at: new Date().toISOString(),
+            })
 
-          if (upsertError) {
-            result.errors.push(`Failed to upsert article: ${upsertError.message}`)
+          if (insertError) {
+            result.errors.push(`Failed to insert article: ${insertError.message}`)
           } else {
             result.items_inserted++
           }
