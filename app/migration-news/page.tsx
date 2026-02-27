@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 // Set to false to enable the page
-const PAGE_HIDDEN = true
+const PAGE_HIDDEN = false
 
 interface NewsArticle {
   id: string
