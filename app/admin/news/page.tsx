@@ -52,18 +52,31 @@ export default function AdminNewsPage() {
       const response = await fetch('/api/admin/news', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ id, status }),
       })
 
-      const result = await response.json()
+      console.log(`[updateStatus] Response status: ${response.status}`)
+
+      let result
+      const responseText = await response.text()
+      console.log(`[updateStatus] Response body: ${responseText}`)
+
+      try {
+        result = JSON.parse(responseText)
+      } catch {
+        console.error('[updateStatus] Failed to parse response as JSON:', responseText)
+        setUpdatingId(null)
+        return
+      }
 
       if (!response.ok || !result.success) {
-        console.error('Error updating article:', result.message)
+        console.error(`[updateStatus] API error: ${response.status} - ${result.message}`)
       } else {
         setArticles(prev => prev.filter(a => a.id !== id))
       }
     } catch (error) {
-      console.error('Error updating article:', error)
+      console.error('[updateStatus] Fetch error:', error)
     }
 
     setUpdatingId(null)
