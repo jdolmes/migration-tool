@@ -13,7 +13,7 @@ interface NavLink {
 
 const navLinks: NavLink[] = [
   { href: '/', label: 'Occupation Search' },
-  { href: '/migration-news', label: 'Migration News', comingSoon: true },
+  { href: '/migration-news', label: 'Migration News' },
   { href: '/points-calculator', label: 'Points Calculator', comingSoon: true },
   { href: '/visas', label: 'Visas', comingSoon: true },
 ]
