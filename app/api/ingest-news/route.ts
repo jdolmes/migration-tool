@@ -7,24 +7,76 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 // Only save articles containing at least one of these (case insensitive)
+// Evidence-based golden identifiers — no broad standalone words
 const INCLUDE_KEYWORDS = [
-  'visa', 'migration agent', 'RMA', 'MARA', 'subclass', 'skilled migration',
-  'occupation list', 'legislative instrument', 'LIN', 'determination',
-  'skilled occupation', 'points test', 'EOI', 'SkillSelect', 'invitation round',
-  '482', '186', '189', '190', '491', '494', '485', 'ANZSCO', 'MLTSSL', 'STSOL',
-  'CSOL', 'skills assessment', 'TRA', 'VETASSESS', 'Engineers Australia',
-  'processing time', 'visa backlog', 'nomination', 'employer sponsored',
-  'permanent residency', 'work rights', 'bridging visa', 'Home Affairs',
-  'migration program', 'migration intake', 'CPD', 'registered migration',
-  'visa subclass', 'skilled worker', 'temporary visa', 'migration legislation',
-  'immigration policy', 'visa processing', 'migration regulation',
+  // Subclass Numbers
+  'subclass 189', 'subclass 190', 'subclass 491', 'subclass 482',
+  'subclass 186', 'subclass 485', 'subclass 500', 'subclass 820',
+  'subclass 494', 'subclass 187', 'subclass 103', 'subclass 143',
+  // Visa Stream Names (official)
+  'skills in demand visa', 'SID visa', 'general skilled migration',
+  'graduate visa', 'training visa', 'partner visa', 'family visa',
+  'temporary graduate', 'contributory parent', 'sponsored parent',
+  'global talent', 'distinguished talent', 'TSS visa', 'ENS visa', 'RSMS',
+  'employer nomination scheme', 'regional sponsored migration',
+  // Legal & Regulatory Citations
+  'Migration Act 1958', 'Migration Agents Regulations', 'Ministerial Direction',
+  'ESOS Act', 'legislative instrument', 'LIN', 'sunsetting',
+  // Regulatory Bodies & Registers
+  'Register of Migration Agents', 'Administrative Review Tribunal',
+  'Centre for Population', 'MARA', 'OMARA', 'Home Affairs',
+  'Department of Home Affairs',
+  // Technical Processes
+  'SkillSelect', 'TSMIT', 'CSOL', 'MLTSSL', 'STSOL', 'EOI',
+  'invitation round', 'Confirmation of Enrolment', 'CoE',
+  'skills assessment', 'labour market testing', 'points test',
+  'state nomination', 'nomination allocation', 'grant rates',
+  'priority processing', 'section 48',
+  // Agent-Specific
+  'registered migration agent', 'migration agent', 'RMA', 'CPD',
+  'continuing professional development', 'professional indemnity',
+  'immigration assistance',
+  // Visa & Policy Phrases
+  'skilled occupation list', 'occupation list', 'employer sponsored',
+  'employer sponsorship', 'work rights', 'post-study work rights',
+  'processing time', 'visa processing', 'onshore switching',
+  'offshore visa', 'bridging visa', 'temporary visa', 'permanent visa',
+  'visa cancellation', 'protection visa', 'visa hopping', 'visa fraud',
+  'visa stream', 'visa pathway', 'visa conditions',
+  // Program & Policy Terms
+  'skilled migration', 'migration program', 'migration strategy',
+  'migration framework', 'migration system', 'net overseas migration',
+  'migration intake', 'temporary skills shortage', 'skills in demand',
+  'migration legislation', 'immigration policy', 'migration regulation',
+  'English-language thresholds', 'language test',
+  // Education-Specific
+  'education agent', 'course transfer', 'employer sponsorship pathways',
+  'immigration regulations', 'Population Statement',
+  // Compliance & Enforcement
+  'compliance audits', 'infringement notice', 'civil penalty',
+  'critical skills list', 'stay orders', 'migration integrity',
+  'regulatory integrity',
 ]
 
 // Discard articles where title contains any of these (even if they passed include filter)
 const EXCLUDE_KEYWORDS = [
-  'One Nation', 'Pauline Hanson', 'Nigel Farage', 'ISIS', 'Syria', 'Roj camp',
-  'asylum seeker', 'refugee camp', 'capital gains', 'commentisfree',
-  'fake immigration', 'far right', 'Islamic country',
+  // Political Figures
+  'Angus Taylor', 'Pauline Hanson', 'Sussan Ley', 'One Nation',
+  'shadow immigration minister', 'Liberal party', 'leadership change',
+  'Jacinda Ardern', 'former prime minister', 'ex-prime minister',
+  // Political Topics
+  'culture wars', 'asylum seeker', 'election', 'polling',
+  'border force raid', 'people smuggling', 'maritime border',
+  'detention centre', 'deportation order', 'Gaza', 'Somalia',
+  'illegal fishing', 'far right', 'Islamic country',
+  // Travel & Lifestyle
+  'passport changes', 'dual citizens', 'travel and tourism',
+  'holiday deal', 'hotel review', 'flight special', 'tourism',
+  // Demographics Noise
+  'birth rate', 'population forecast', 'demographics',
+  // General Noise
+  'interest rate', 'cost of living', 'budget deficit',
+  'stock market', 'real estate', 'property market',
 ]
 
 const TAG_KEYWORDS = {
@@ -164,6 +216,7 @@ export async function GET(request: Request) {
     items_found: 0,
     items_inserted: 0,
     items_skipped: 0,
+    items_whitelisted: 0,
     errors: [] as string[],
   }
 
@@ -203,7 +256,28 @@ export async function GET(request: Request) {
 
         // Filter and upsert articles
         for (const article of articles) {
-          // Check exclude list first (on title only)
+          // Whitelisted sources bypass keyword filter entirely
+          if (feed.is_whitelisted) {
+            const { error: upsertError } = await supabase
+              .from('news_articles')
+              .upsert(
+                {
+                  ...article,
+                  updated_at: new Date().toISOString(),
+                },
+                { onConflict: 'source_url' }
+              )
+
+            if (upsertError) {
+              result.errors.push(`Failed to upsert article: ${upsertError.message}`)
+            } else {
+              result.items_inserted++
+              result.items_whitelisted++
+            }
+            continue
+          }
+
+          // Non-whitelisted: Check exclude list first (on title only)
           if (shouldExcludeArticle(article.title)) {
             result.items_skipped++
             continue
