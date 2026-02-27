@@ -112,6 +112,19 @@ export default function MigrationNewsPage() {
     })
   }
 
+  const getSourceBadge = (source: string): { bg: string; text: string; abbr: string } => {
+    switch (source) {
+      case 'Migration Alliance':
+        return { bg: '#1a1a2e', text: '#f5c842', abbr: 'MA' }
+      case 'The Guardian Australia':
+        return { bg: '#052962', text: '#ffffff', abbr: 'Gu' }
+      case 'SBS News':
+        return { bg: '#e4002b', text: '#ffffff', abbr: 'SBS' }
+      default:
+        return { bg: '#6b7280', text: '#ffffff', abbr: source.substring(0, 2).toUpperCase() }
+    }
+  }
+
   // Return null while redirecting
   if (PAGE_HIDDEN) {
     return null
@@ -152,61 +165,40 @@ export default function MigrationNewsPage() {
 
         {!isLoading && articles.length > 0 && (
           <>
-            <div className="space-y-4">
-              {articles.map((article) => (
-                <article
-                  key={article.id}
-                  className="border border-gray-100 rounded-xl p-5 hover:border-gray-200 transition-colors"
-                >
+            <div className="divide-y divide-gray-100">
+              {articles.map((article) => {
+                const badge = getSourceBadge(article.source)
+                return (
                   <a
+                    key={article.id}
                     href={article.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block group"
+                    className="flex gap-3 py-3 group"
                   >
-                    <h2 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                      {article.title}
-                    </h2>
+                    <div
+                      className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold"
+                      style={{ backgroundColor: badge.bg, color: badge.text }}
+                    >
+                      {badge.abbr}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-400">
+                        {article.source}
+                        {article.published_at && ` · ${formatDate(article.published_at)}`}
+                      </div>
+                      <h2 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                        {article.title}
+                      </h2>
+                      {article.snippet && (
+                        <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">
+                          {article.snippet}
+                        </p>
+                      )}
+                    </div>
                   </a>
-
-                  <div className="mt-2 flex items-center gap-2 text-sm text-gray-400">
-                    <span className="font-medium text-gray-500">{article.source}</span>
-                    {article.published_at && (
-                      <>
-                        <span>·</span>
-                        <span>{formatDate(article.published_at)}</span>
-                      </>
-                    )}
-                  </div>
-
-                  {article.snippet && (
-                    <p className="mt-3 text-gray-600 text-sm line-clamp-2">
-                      {article.snippet}
-                    </p>
-                  )}
-
-                  {article.impact_note_status === 'approved' && article.impact_note && (
-                    <div className="mt-3 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
-                      <p className="text-sm text-blue-800">
-                        <span className="font-medium">Impact:</span> {article.impact_note}
-                      </p>
-                    </div>
-                  )}
-
-                  {article.tags && article.tags.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {article.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </article>
-              ))}
+                )
+              })}
             </div>
 
             {hasMore && (
