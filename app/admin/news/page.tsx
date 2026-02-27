@@ -48,15 +48,22 @@ export default function AdminNewsPage() {
   const updateStatus = async (id: string, status: 'approved' | 'rejected') => {
     setUpdatingId(id)
 
-    const { error } = await supabase
-      .from('news_articles')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', id)
+    try {
+      const response = await fetch('/api/admin/news', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      })
 
-    if (error) {
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        console.error('Error updating article:', result.message)
+      } else {
+        setArticles(prev => prev.filter(a => a.id !== id))
+      }
+    } catch (error) {
       console.error('Error updating article:', error)
-    } else {
-      setArticles(prev => prev.filter(a => a.id !== id))
     }
 
     setUpdatingId(null)
