@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Newspaper, RefreshCw, Check, X, Inbox } from 'lucide-react'
+import { Newspaper, RefreshCw, Check, X, Inbox, Plus, Link, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 interface NewsArticle {
@@ -15,11 +15,25 @@ interface NewsArticle {
   status: string
 }
 
+interface ArticlePreview {
+  title: string
+  snippet: string | null
+  source: string
+  source_url: string
+}
+
 export default function AdminNewsPage() {
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+
+  // Manual entry state
+  const [manualUrl, setManualUrl] = useState('')
+  const [isFetchingArticle, setIsFetchingArticle] = useState(false)
+  const [articlePreview, setArticlePreview] = useState<ArticlePreview | null>(null)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [manualError, setManualError] = useState<string | null>(null)
 
   const fetchArticles = async (showRefresh = false) => {
     if (showRefresh) setIsRefreshing(true)
@@ -92,6 +106,73 @@ export default function AdminNewsPage() {
     })
   }
 
+  const fetchArticlePreview = async () => {
+    if (!manualUrl.trim()) return
+
+    setIsFetchingArticle(true)
+    setManualError(null)
+    setArticlePreview(null)
+
+    try {
+      const response = await fetch('/api/admin/news/fetch-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ url: manualUrl.trim() }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        setManualError(result.message || 'Failed to fetch article')
+      } else {
+        setArticlePreview(result.data)
+      }
+    } catch (error) {
+      setManualError('Failed to fetch article')
+      console.error('[fetchArticlePreview] Error:', error)
+    } finally {
+      setIsFetchingArticle(false)
+    }
+  }
+
+  const publishArticle = async () => {
+    if (!articlePreview) return
+
+    setIsPublishing(true)
+    setManualError(null)
+
+    try {
+      const response = await fetch('/api/admin/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(articlePreview),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        setManualError(result.message || 'Failed to publish article')
+      } else {
+        // Success - clear the form
+        setArticlePreview(null)
+        setManualUrl('')
+      }
+    } catch (error) {
+      setManualError('Failed to publish article')
+      console.error('[publishArticle] Error:', error)
+    } finally {
+      setIsPublishing(false)
+    }
+  }
+
+  const cancelPreview = () => {
+    setArticlePreview(null)
+    setManualUrl('')
+    setManualError(null)
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Page Header */}
@@ -113,6 +194,84 @@ export default function AdminNewsPage() {
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           Refresh
         </button>
+      </div>
+
+      {/* Manual Article Entry */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="url"
+              value={manualUrl}
+              onChange={(e) => setManualUrl(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !isFetchingArticle && fetchArticlePreview()}
+              placeholder="Paste article URL to add manually..."
+              disabled={isFetchingArticle || !!articlePreview}
+              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+            />
+          </div>
+          <button
+            onClick={fetchArticlePreview}
+            disabled={!manualUrl.trim() || isFetchingArticle || !!articlePreview}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isFetchingArticle ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            Add Article
+          </button>
+        </div>
+
+        {manualError && (
+          <p className="mt-2 text-sm text-red-600">{manualError}</p>
+        )}
+
+        {articlePreview && (
+          <div className="mt-4 border border-gray-200 rounded-lg p-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Preview</p>
+            <a
+              href={articlePreview.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
+            >
+              {articlePreview.title}
+            </a>
+            <div className="mt-1 text-sm text-gray-500">
+              {articlePreview.source}
+            </div>
+            {articlePreview.snippet && (
+              <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                {articlePreview.snippet}
+              </p>
+            )}
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={publishArticle}
+                disabled={isPublishing}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {isPublishing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
+                Confirm & Publish
+              </button>
+              <button
+                onClick={cancelPreview}
+                disabled={isPublishing}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                <X className="w-4 h-4" />
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Articles List */}
